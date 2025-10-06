@@ -1,0 +1,7 @@
+# CLion
+.idea/
+edior.xml
+# CMake
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
