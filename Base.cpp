@@ -45,6 +45,9 @@ dataType userInput(string messege);
 
 void TransactionTester1();
 
+bool createTransaction(int intex Transaction& transaction);
+bool createTransaction(Transaction& trasnaction, Settings &settings);
+
 /*
     Purpose: Checks if a transaction exists
 
@@ -71,7 +74,6 @@ bool archiveTransaction(int index, Settings &settings);
     Output: whether the retrieval could be completed.
 */
 bool retrieveTransaction(int index, Settings &settings);
-
 /*
     Checks if a customer exists
 
@@ -192,6 +194,20 @@ void TransactionTester1()
     cout << i1 << endl;
 
     cout << i1 << endl;
+}
+
+
+bool createTransaction(int index, Transaction &transaction){
+  if (checkTransaction(index)) return false;
+
+  transactions.emplace(index, move(transaction));
+  transactionArchivesAge.push(index);
+  return true;
+}
+
+bool createTransaction(Transaction& trasnaction, Settings &settings){
+  createTransaction(settings.getNumCustomers(), transaction)
+  settings.addNumCustomers();
 }
 
 
