@@ -23,6 +23,7 @@
 #include "settings.h"
 using namespace std;
 
+
 //TODO: Move to runProgram.
 PaymentPortal p1;
 
@@ -39,15 +40,26 @@ queue<int> transactionArchivesAge;
 unordered_map<int, Customer> customers;
 queue<int> customersAge;
 
+struct sPass
+{
+    unordered_map<int, Transaction>& transactions;
+    unordered_map<int, Transaction>& transactionArchives;
+    queue<int>& transactionArchivesAge;
+    unordered_map<int, Customer> customers;
+    queue<int> customersAge;
+    Settings settings;
+
+
+};
 
 template <typename dataType>
 dataType userInput(string messege);
 
 void TransactionTester1();
 
-bool createTransaction(int intex Transaction& transaction);
-bool createTransaction(Transaction& trasnaction, Settings &settings);
+bool createTransaction(int index, Transaction& transaction, Settings &settings);
 
+bool numTransactionLimit(unordered_map<int, Transaction>& transactionArchives, queue<int> transactionArchivesAge, bool futureCheck, Settings &settings);
 /*
     Purpose: Checks if a transaction exists
 
@@ -64,7 +76,8 @@ bool checkTransaction(int index);
 
     Output: whether the archive could be completed.
 */
-bool archiveTransaction(int index, Settings &settings);
+
+bool archiveTransaction(int index, unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, Settings &settings);
 
 /*
     Reads an archived transaction from the save file to memory.
@@ -73,7 +86,7 @@ bool archiveTransaction(int index, Settings &settings);
 
     Output: whether the retrieval could be completed.
 */
-bool retrieveTransaction(int index, Settings &settings);
+bool retrieveTransaction(int index, unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, Settings &settings);
 /*
     Checks if a customer exists
 
@@ -166,7 +179,7 @@ int runProgram(){
 
     cout << "Transactions size: " << transactions.size() << endl;
     cout << "Transactions Archive size: " << transactionArchives.size() << endl;
-    archiveTransaction(0, settings);
+    archiveTransaction(0, transactions, trasettings);
 
     cout << "Transactions size: " << transactions.size() << endl;
     cout << "Transactions Archive size: " << transactionArchives.size() << endl;
@@ -197,19 +210,13 @@ void TransactionTester1()
 }
 
 
-bool createTransaction(int index, Transaction &transaction){
+bool createTransaction(int index, Transaction &transaction, Settings& settings){
   if (checkTransaction(index)) return false;
 
   transactions.emplace(index, move(transaction));
   transactionArchivesAge.push(index);
   return true;
 }
-
-bool createTransaction(Transaction& trasnaction, Settings &settings){
-  createTransaction(settings.getNumCustomers(), transaction)
-  settings.addNumCustomers();
-}
-
 
 bool checkTransaction(int index){
     if (transactions.count(index) || transactionArchives.count(index)) return true;
@@ -242,7 +249,7 @@ bool checkTransaction(int index){
 }
 
 // I copied some of this from https://json.nlohmann.me and https://www.youtube.com/watch?v=Sa8bdVogGIo, copied lines are marked with *
-bool archiveTransaction(int index, Settings &settings) {
+bool archiveTransaction(int index, unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, Settings &settings) {
     //TODO: Input validation can be added when methods are not called manually.
     // if (index < 0 || index > numCustomers) return false;
     // if (!checkCustomer(index)) return false;
@@ -282,21 +289,17 @@ bool archiveTransaction(int index, Settings &settings) {
     out << data.dump(4); //*
     out.close(); //*
 
-    // If there are too many transactions in memory, the oldest one is archived
-    if (transactionArchives.size() > settings.getMaxTransactions()) {
-        transactionArchives.erase(transactionArchivesAge.front());
-        transactionArchivesAge.pop();
+    if (numTransactionLimit(transactionArchives, transactionArchivesAge, true, settings)){
+        auto transactionMove = transactions.extract(index);
+        transactionArchives.insert(move(transactionMove));
+        transactionArchivesAge.push(index);
+        settings.addNumTransactions();
     }
-    auto transactionMove = transactions.extract(index);
-    transactionArchives.insert(move(transactionMove));
-    transactionArchivesAge.push(index);
-
-    settings.addNumTransactions();
     return true;
 }
 
 // I copied some of this from https://json.nlohmann.me and https://www.youtube.com/watch?v=Sa8bdVogGIo, copied lines are marked with *
-bool retrieveTransaction(int index, Settings &settings){
+bool retrieveTransaction(int index, unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, Settings &settings){
     //TODO: Input validation can be added when methods are not called manually
     // if (index < 0 || index > numCustomers) return false;
     // if (!checkCustomer(index)) return false;
@@ -355,30 +358,9 @@ bool retrieveTransaction(int index, Settings &settings){
             transactionAdd.setItems(items);
             }
 
-            transactionArchives.emplace(index, transactionAdd);
-            transactionArchivesAge.push(index);
-
-            // If there are too many transactions in memory, the oldest one is archived
-            if (transactionArchives.size() > settings.getMaxTransactions()) {
-                while (!transactionArchivesAge.empty()){
-                    if (transactionArchives.empty()) {
-                        cerr << "transactionArchivesAge > transactionArchives";
-                        transactionArchivesAge.pop();
-                        break;
-                    }
-
-                    int removeIndex = transactionArchivesAge.front();
-                    transactionArchivesAge.pop();
-
-                    if (!checkTransaction(removeIndex)) {
-                        cerr << "transactionArchive could not be removed";
-                        continue;
-                    }
-
-                    transactionArchives.erase(removeIndex);
-                    return true;
-
-                }
+            if (numTransactionLimit(transactionArchives, transactionArchivesAge, true, settings)){
+                transactionArchives.emplace(index, transactionAdd);
+                transactionArchivesAge.push(index);
             }
 
             return true;
@@ -389,6 +371,27 @@ bool retrieveTransaction(int index, Settings &settings){
     return false;
 }
 
+bool numTransactionLimit(unordered_map<int, Transaction>& transactionArchives, queue<int> transactionArchivesAge, bool futureCheck, Settings &settings){
+    if (transactionArchives.size() != transactionArchivesAge.size())
+    {
+        cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
+        return false;
+    }
+    if (transactionArchives.size() > settings.getMaxTransactions() - futureCheck) {
+        int removeIndex = transactionArchivesAge.front();
+        transactionArchivesAge.pop();
+
+        if (!checkTransaction(removeIndex)){
+            cerr << "transactionArchive could not be removed";
+            return false;
+        }
+
+        transactionArchives.erase(removeIndex);
+        return true;
+    }
+
+    return false;
+}
 // Very similar to checkTransaction, but with customers instead.
 bool checkCustomer(int index){
     if (customers.count(index)) return true;
