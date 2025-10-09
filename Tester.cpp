@@ -293,8 +293,19 @@ bool transactionTest(){
 }
 
 bool mainTest(){
+
   bool passed = true;
+
+  unordered_map<int, Transaction> transactions;
+  unordered_map<int, Transaction> transactionArchives;
+  queue<int> transactionArchivesAge;
+
+  unordered_map<int, Customer> customers;
+  queue<int> customersAge;
   Settings settings("data/settings.json");
+
+  SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings);
+
 
   // Declared in Base
   // PaymentPortal p1;

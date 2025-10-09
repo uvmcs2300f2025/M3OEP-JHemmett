@@ -30,26 +30,29 @@ PaymentPortal p1;
 unordered_map<int, Item> items;
 
 //TODO: Read these from settings. I have them as global vars right now because directly reading from settings breaks stuff.
-int numTransactions = 0;
-int numCustomers = 0;
+// int numTransactions = 0;
+// int numCustomers = 0;
+//
+// unordered_map<int, Transaction> transactions;
+// unordered_map<int, Transaction> transactionArchives;
+// queue<int> transactionArchivesAge;
+//
+// unordered_map<int, Customer> customers;
+// queue<int> customersAge;
 
-unordered_map<int, Transaction> transactions;
-unordered_map<int, Transaction> transactionArchives;
-queue<int> transactionArchivesAge;
-
-unordered_map<int, Customer> customers;
-queue<int> customersAge;
-
-struct sPass
+struct SPass
 {
     unordered_map<int, Transaction>& transactions;
     unordered_map<int, Transaction>& transactionArchives;
     queue<int>& transactionArchivesAge;
-    unordered_map<int, Customer> customers;
-    queue<int> customersAge;
-    Settings settings;
+    unordered_map<int, Customer>& customers;
+    queue<int>& customersAge;
+    Settings& settings;
+    PaymentPortal paymentPortal;
 
 
+    SPass( unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, queue<int>& transactionArchivesAge, unordered_map<int, Customer>& customers, queue<int>& customersAge, Settings& settings, PaymentPortal& paymentPortal )
+    : transactions(transactions), transactionArchives(transactionArchives), transactionArchivesAge(transactionArchivesAge), customers(customers), customersAge(customersAge), settings(settings), paymentPortal(paymentPortal){}
 };
 
 template <typename dataType>
@@ -57,9 +60,9 @@ dataType userInput(string messege);
 
 void TransactionTester1();
 
-bool createTransaction(int index, Transaction& transaction, Settings &settings);
+bool createTransaction(int index, SPass& sPass);
 
-bool numTransactionLimit(unordered_map<int, Transaction>& transactionArchives, queue<int> transactionArchivesAge, bool futureCheck, Settings &settings);
+bool numTransactionLimit(bool futureCheck, SPass& sPass);
 /*
     Purpose: Checks if a transaction exists
 
@@ -67,7 +70,7 @@ bool numTransactionLimit(unordered_map<int, Transaction>& transactionArchives, q
 
     Output: whether the transaction exists
 */
-bool checkTransaction(int index);
+bool checkTransaction(int index, SPass& sPass);
 
 /*
     Moves a transaction from pending to completed and saves it to a file.
@@ -77,7 +80,7 @@ bool checkTransaction(int index);
     Output: whether the archive could be completed.
 */
 
-bool archiveTransaction(int index, unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, Settings &settings);
+bool archiveTransaction(int index, SPass& sPass);
 
 /*
     Reads an archived transaction from the save file to memory.
@@ -86,7 +89,7 @@ bool archiveTransaction(int index, unordered_map<int, Transaction>& transactions
 
     Output: whether the retrieval could be completed.
 */
-bool retrieveTransaction(int index, unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, Settings &settings);
+bool retrieveTransaction(int index, SPass& sPass);
 /*
     Checks if a customer exists
 
@@ -94,7 +97,7 @@ bool retrieveTransaction(int index, unordered_map<int, Transaction>& transaction
 
     Output: whether the customer exists
 */
-bool checkCustomer(int index);
+bool checkCustomer(int index, SPass& sPass);
 
 /*
     Saves customer data to a file
@@ -103,7 +106,7 @@ bool checkCustomer(int index);
 
     Output: whether the archive could be completed.
 */
-bool archiveCustomer(int index, Settings &settings);
+bool archiveCustomer(int index, SPass& sPass);
 
 /*
     Reads an archived customer from the save file to memory.
@@ -112,7 +115,7 @@ bool archiveCustomer(int index, Settings &settings);
 
     Output: whether the retrieval could be completed.
 */
-bool retrieveCustomer(int index, Settings &settings);
+bool retrieveCustomer(int index, SPass& sPass);
 
 /*
     Removes a customer's save data
@@ -121,7 +124,7 @@ bool retrieveCustomer(int index, Settings &settings);
 
     Output: whether the deletion could be completed.
 */
-bool removeCustomerArchive(int index, Settings &settings);
+bool removeCustomerArchive(int index, SPass& sPass);
 
 /*
     Finds the item object to an associated ID
@@ -150,47 +153,47 @@ bool createCustomer();
 
 //TODO: A lot of the code in here should be separate functions
 int runProgram(){
-    Settings settings("data/settings.json");
-
-    cout << settings.getNumCustomers() << endl;
-
-
-    // Wipes for testing.
-    ofstream MyFile("data/transactions.json");
-
-    items.emplace(1234, Item(1234, "Carrot", 1, 10));
-    items.emplace(2345, Item(2345, "Pea", 2, 10));
-
-    //TODO: Read from setting file
-    customers.emplace(numCustomers, Customer(numCustomers, "Jonas", "H", "8023632222"));
-    numCustomers++;
-
-    customers.emplace(numCustomers, Customer(numCustomers, "JJonas", "J", "1023632222"));
-    numCustomers++;
-
-    transactions.emplace(numTransactions, Transaction(&p1, &customers.at(0), numTransactions));
-    numTransactions++;
-
-    cout << items.at(1234) << endl;
-
-    transactions.at(0).addItem(items.at(1234));
-
-    cout << items.at(1234) << endl;
-
-    cout << "Transactions size: " << transactions.size() << endl;
-    cout << "Transactions Archive size: " << transactionArchives.size() << endl;
-    archiveTransaction(0, transactions, trasettings);
-
-    cout << "Transactions size: " << transactions.size() << endl;
-    cout << "Transactions Archive size: " << transactionArchives.size() << endl;
-
-    transactions.emplace(numTransactions, Transaction(&p1, &customers.at(1), numTransactions));
-    numTransactions++;
-
-    transactions.at(1).addItem(items.at(2345));
-    cout << "Transactions size: " << transactions.size() << endl;
-    cout << "Transactions Archive size: " << transactionArchives.size() << endl;
-
+    // Settings settings("data/settings.json");
+    //
+    // cout << settings.getNumCustomers() << endl;
+    //
+    //
+    // // Wipes for testing.
+    // ofstream MyFile("data/transactions.json");
+    //
+    // items.emplace(1234, Item(1234, "Carrot", 1, 10));
+    // items.emplace(2345, Item(2345, "Pea", 2, 10));
+    //
+    // //TODO: Read from setting file
+    // customers.emplace(numCustomers, Customer(numCustomers, "Jonas", "H", "8023632222"));
+    // numCustomers++;
+    //
+    // customers.emplace(numCustomers, Customer(numCustomers, "JJonas", "J", "1023632222"));
+    // numCustomers++;
+    //
+    // transactions.emplace(numTransactions, Transaction(&p1, &customers.at(0), numTransactions));
+    // numTransactions++;
+    //
+    // cout << items.at(1234) << endl;
+    //
+    // transactions.at(0).addItem(items.at(1234));
+    //
+    // cout << items.at(1234) << endl;
+    //
+    // cout << "Transactions size: " << transactions.size() << endl;
+    // cout << "Transactions Archive size: " << transactionArchives.size() << endl;
+    // archiveTransaction(0, transactions, trasettings);
+    //
+    // cout << "Transactions size: " << transactions.size() << endl;
+    // cout << "Transactions Archive size: " << transactionArchives.size() << endl;
+    //
+    // transactions.emplace(numTransactions, Transaction(&p1, &customers.at(1), numTransactions));
+    // numTransactions++;
+    //
+    // transactions.at(1).addItem(items.at(2345));
+    // cout << "Transactions size: " << transactions.size() << endl;
+    // cout << "Transactions Archive size: " << transactionArchives.size() << endl;
+    //
 
     return 0;
 
@@ -210,7 +213,7 @@ void TransactionTester1()
 }
 
 
-bool createTransaction(int index, Transaction &transaction, Settings& settings){
+bool createTransaction(int index, SPass& sPass){
   if (checkTransaction(index)) return false;
 
   transactions.emplace(index, move(transaction));
@@ -218,7 +221,7 @@ bool createTransaction(int index, Transaction &transaction, Settings& settings){
   return true;
 }
 
-bool checkTransaction(int index){
+bool checkTransaction(int index, SPass& sPass){
     if (transactions.count(index) || transactionArchives.count(index)) return true;
     std::ifstream f("data/transactions.json");
     if (!f) {
@@ -249,7 +252,7 @@ bool checkTransaction(int index){
 }
 
 // I copied some of this from https://json.nlohmann.me and https://www.youtube.com/watch?v=Sa8bdVogGIo, copied lines are marked with *
-bool archiveTransaction(int index, unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, Settings &settings) {
+bool archiveTransaction(int index, SPass& sPass) {
     //TODO: Input validation can be added when methods are not called manually.
     // if (index < 0 || index > numCustomers) return false;
     // if (!checkCustomer(index)) return false;
@@ -299,7 +302,7 @@ bool archiveTransaction(int index, unordered_map<int, Transaction>& transactions
 }
 
 // I copied some of this from https://json.nlohmann.me and https://www.youtube.com/watch?v=Sa8bdVogGIo, copied lines are marked with *
-bool retrieveTransaction(int index, unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, Settings &settings){
+bool retrieveTransaction(int index, SPass& sPass){
     //TODO: Input validation can be added when methods are not called manually
     // if (index < 0 || index > numCustomers) return false;
     // if (!checkCustomer(index)) return false;
@@ -328,8 +331,8 @@ bool retrieveTransaction(int index, unordered_map<int, Transaction>& transaction
             int totalCost   = t.value("totalCost", 0.0);  //*
 
             //TODO: Input validation
-            retrieveCustomer(customerId, settings);
-            Transaction transactionAdd(&p1, &customers.at(customerId), totalCost);
+            retrieveCustomer(customerId, sPass);
+            Transaction transactionAdd(&sPass.p1, &sPass.customers.at(customerId), totalCost);
             transactionAdd.completeTransaction();
 
             int itemId = 0;
@@ -371,7 +374,7 @@ bool retrieveTransaction(int index, unordered_map<int, Transaction>& transaction
     return false;
 }
 
-bool numTransactionLimit(unordered_map<int, Transaction>& transactionArchives, queue<int> transactionArchivesAge, bool futureCheck, Settings &settings){
+bool numTransactionLimit(SPass& sPass){
     if (transactionArchives.size() != transactionArchivesAge.size())
     {
         cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
@@ -393,7 +396,7 @@ bool numTransactionLimit(unordered_map<int, Transaction>& transactionArchives, q
     return false;
 }
 // Very similar to checkTransaction, but with customers instead.
-bool checkCustomer(int index){
+bool checkCustomer(int index, SPass& sPass){
     if (customers.count(index)) return true;
     std::ifstream f("data/customers.json");
     if (!f) {
@@ -419,7 +422,7 @@ bool checkCustomer(int index){
 
 }
 // Very similar to retrieveTransaction, but with customers instead.
-bool retrieveCustomer(int index, Settings &settings){
+bool retrieveCustomer(int index, SPass& sPass){
     //TODO: Input validation can be addedhen methods are not called manually
     // if (index < 0 || index > numCustomers) return false;
     // if (!checkCustomer(index)) return false;
@@ -489,7 +492,7 @@ bool retrieveCustomer(int index, Settings &settings){
 
 
 // Very similar to archiveTransaction, but with customers instead.
-bool archiveCustomer(int index, Settings &settings){
+bool archiveCustomer(int index, SPass& sPass){
 
     //TODO: Input validation can be added when methods are not called manually.
     // if (index < 0 || index > numCustomers) return false;
@@ -574,7 +577,7 @@ bool removeCustomerArchive(int index, Settings &settings)
 }
 
 //TODO: Make this smoother.
-bool updateCustomer(int index, Settings &settings)
+bool updateCustomer(int index, SPass& sPass)
 {
     if (removeCustomerArchive(index, settings) && archiveCustomer(index, settings)) return true;
     return false;
