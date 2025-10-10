@@ -40,6 +40,7 @@ int main(){
   cout << "transactionTest()" << transactionTest() << endl;
   cout << "mainTest(): " << mainTest() << endl;
 
+  runProgram();
   return 0;
 }
 
@@ -303,8 +304,8 @@ bool mainTest(){
   unordered_map<int, Customer> customers;
   queue<int> customersAge;
   Settings settings("data/settings.json");
-
-  SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings);
+  PaymentPortal paymentPortal;
+  SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal);
 
 
   // Declared in Base
@@ -319,7 +320,7 @@ bool mainTest(){
   // unordered_map<int, Customer> customers;
   customers.emplace(1, Customer(1, "Jonas", "H", "8023632222"));
 
-  numCustomers++;
+  sPass.settings.addNumCustomers();
 
   // Declared in Base
   // queue<int> customersAge;
@@ -361,20 +362,20 @@ bool mainTest(){
   }
 
   customers.emplace(2, Customer("CoolerJonas", "GH", "8023632223"));
-  numCustomers++;
+  settings.addNumCustomers();
   customers.emplace(3, Customer("CoolestJonas", "JGH", "8023632224"));
-  numCustomers++;
+  settings.addNumCustomers();
 
-  archiveCustomer(1, settings);
+  archiveCustomer(1, sPass);
 
-  numCustomers = 0;
+  settings.setNumCustomers(0);
   // Emptys Customers
   customers.clear();
 
   while (customersAge.size()) customersAge.pop();
 
 
-  retrieveCustomer(1, settings);
+  retrieveCustomer(1, sPass);
 
 
   if (customers.size() != 1){
@@ -391,18 +392,22 @@ bool mainTest(){
     passed = false;
     cout << "transactions.size(), after  retrieveCustomer(1, settings), is not 1, but: " << transactions.size() << endl;
   }
+  customers.at(1).addCredit(10);
+  archiveCustomer(1, sPass);
   return passed;
 
 
-  archiveTransaction(2, settings);
 
-  numTransactions = 0;
+
+  archiveTransaction(2, sPass);
+
+  sPass.settings.setNumTransactions(0);
   // Emptys Customers
   transactions.clear();
 
   while (transactionArchivesAge.size()) transactionArchivesAge.pop();
 
-  retrieveTransaction(1, settings);
+  retrieveTransaction(1, sPass);
 
   if (transactions.size() != 1){
     passed = false;

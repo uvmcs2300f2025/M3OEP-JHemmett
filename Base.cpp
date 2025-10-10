@@ -124,7 +124,7 @@ bool retrieveCustomer(int index, SPass& sPass);
 
     Output: whether the deletion could be completed.
 */
-bool removeCustomerArchive(int index, SPass& sPass);
+bool removeCustomer(int index, SPass& sPass);
 
 /*
     Finds the item object to an associated ID
@@ -133,6 +133,9 @@ bool removeCustomerArchive(int index, SPass& sPass);
 
     Output: Item Object
 */
+
+bool numCustomerLimit(bool futureCheck, SPass& sPass);
+
 optional<Item> findItem(int id);
 
 /*
@@ -152,52 +155,19 @@ bool createCustomer();
 
 
 //TODO: A lot of the code in here should be separate functions
-int runProgram(){
-    // Settings settings("data/settings.json");
-    //
-    // cout << settings.getNumCustomers() << endl;
-    //
-    //
-    // // Wipes for testing.
-    // ofstream MyFile("data/transactions.json");
-    //
-    // items.emplace(1234, Item(1234, "Carrot", 1, 10));
-    // items.emplace(2345, Item(2345, "Pea", 2, 10));
-    //
-    // //TODO: Read from setting file
-    // customers.emplace(numCustomers, Customer(numCustomers, "Jonas", "H", "8023632222"));
-    // numCustomers++;
-    //
-    // customers.emplace(numCustomers, Customer(numCustomers, "JJonas", "J", "1023632222"));
-    // numCustomers++;
-    //
-    // transactions.emplace(numTransactions, Transaction(&p1, &customers.at(0), numTransactions));
-    // numTransactions++;
-    //
-    // cout << items.at(1234) << endl;
-    //
-    // transactions.at(0).addItem(items.at(1234));
-    //
-    // cout << items.at(1234) << endl;
-    //
-    // cout << "Transactions size: " << transactions.size() << endl;
-    // cout << "Transactions Archive size: " << transactionArchives.size() << endl;
-    // archiveTransaction(0, transactions, trasettings);
-    //
-    // cout << "Transactions size: " << transactions.size() << endl;
-    // cout << "Transactions Archive size: " << transactionArchives.size() << endl;
-    //
-    // transactions.emplace(numTransactions, Transaction(&p1, &customers.at(1), numTransactions));
-    // numTransactions++;
-    //
-    // transactions.at(1).addItem(items.at(2345));
-    // cout << "Transactions size: " << transactions.size() << endl;
-    // cout << "Transactions Archive size: " << transactionArchives.size() << endl;
-    //
+void runProgram(){
+    unordered_map<int, Transaction> transactions;
+    unordered_map<int, Transaction> transactionArchives;
+    queue<int> transactionArchivesAge;
 
-    return 0;
+    unordered_map<int, Customer> customers;
+    queue<int> customersAge;
+    Settings settings("data/settings.json");
+    PaymentPortal paymentPortal;
+    SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal);
 
-    // End of main
+    int number = userInput<int>("Enter your customer ID Number:");
+
 }
 void TransactionTester1()
 {
@@ -213,16 +183,18 @@ void TransactionTester1()
 }
 
 
-bool createTransaction(int index, SPass& sPass){
-  if (checkTransaction(index)) return false;
-
-  transactions.emplace(index, move(transaction));
-  transactionArchivesAge.push(index);
-  return true;
-}
+// bool createTransaction(int index, SPass& sPass){
+//   if (checkTransaction(index, sPass)) return false;
+//
+//   transactions.emplace(index, Transaction());
+//   transactionArchivesAge.push(index);
+//   return true;
+// }
 
 bool checkTransaction(int index, SPass& sPass){
-    if (transactions.count(index) || transactionArchives.count(index)) return true;
+    if (index < 0 ) return false;
+
+    if (sPass.transactions.count(index) || sPass.transactionArchives.count(index)) return true;
     std::ifstream f("data/transactions.json");
     if (!f) {
         std::cerr << "Could not open file";
@@ -253,14 +225,10 @@ bool checkTransaction(int index, SPass& sPass){
 
 // I copied some of this from https://json.nlohmann.me and https://www.youtube.com/watch?v=Sa8bdVogGIo, copied lines are marked with *
 bool archiveTransaction(int index, SPass& sPass) {
-    //TODO: Input validation can be added when methods are not called manually.
-    // if (index < 0 || index > numCustomers) return false;
-    // if (!checkCustomer(index)) return false;
-    // if (index < 0 || index > numTransactions) return false;
-    // if (!checkTransaction(index)) return false;
+    if (!checkTransaction(index, sPass)) return false;
 
-    transactions.at(index).completeTransaction();
-    transactions.at(index).getCustomer()->addTransaction(index);
+    sPass.transactions.at(index).completeTransaction();
+    sPass.transactions.at(index).getCustomer()->addTransaction(index);
 
     using nlohmann::json; //*
 
@@ -280,23 +248,32 @@ bool archiveTransaction(int index, SPass& sPass) {
         data = json::array(); //*
     } //*
 
-    Transaction &trans = transactions.at(index); //*
-
+    Transaction &trans = sPass.transactions.at(index); //*
     json t = trans; //*
 
-    data.push_back(t); //*
+    bool replaced = false;
+    for (auto& entry : data) {
+        if (t.contains("id") && t["id"] == index) {
+            entry = t;
+            replaced = true;
+            break;
+        }
+    }
+
+    if (!replaced) {
+        data.push_back(t); //*
+    }
 
     // Rewrite file
     std::ofstream out("data/transactions.json"); //*
-
     out << data.dump(4); //*
     out.close(); //*
 
-    if (numTransactionLimit(transactionArchives, transactionArchivesAge, true, settings)){
-        auto transactionMove = transactions.extract(index);
-        transactionArchives.insert(move(transactionMove));
-        transactionArchivesAge.push(index);
-        settings.addNumTransactions();
+    if (numTransactionLimit(true, sPass)){
+        auto transactionMove = sPass.transactions.extract(index);
+        sPass.transactionArchives.insert(move(transactionMove));
+        sPass.transactionArchivesAge.push(index);
+        sPass.settings.addNumTransactions();
     }
     return true;
 }
@@ -332,15 +309,15 @@ bool retrieveTransaction(int index, SPass& sPass){
 
             //TODO: Input validation
             retrieveCustomer(customerId, sPass);
-            Transaction transactionAdd(&sPass.p1, &sPass.customers.at(customerId), totalCost);
-            transactionAdd.completeTransaction();
+            Transaction transactionAdd(&sPass.paymentPortal, &sPass.customers.at(customerId), totalCost);
 
-            int itemId = 0;
-            int itemPurchaseQuantity = 0;
-            int itemPurchasePrice = 0;
 
             vector<ItemIn> items;
-            if (t.contains("items") && t["items"].is_array()) { //*
+            if (t.contains("items") && t["items"].is_array()) {
+                int itemPurchaseQuantity = 0;
+                int itemPurchasePrice = 0;
+                int itemId = 0;
+                //*
                 auto itemsVec = t["items"].get<std::vector<nlohmann::json>>(); //*
                 for (const auto& item : itemsVec){ //*
                     if (itemsVec.size() >= 4) {  //*
@@ -350,10 +327,10 @@ bool retrieveTransaction(int index, SPass& sPass){
 
                         if (auto itemObjOpt = findItem(itemId)) { //*
                             Item itemObj = *itemObjOpt;
-                            ItemIn item(&itemObj);
-                            item.purchaseQuantity = itemPurchaseQuantity;
-                            item.purchasePrice = itemPurchasePrice;
-                            items.push_back(move(item));
+                            ItemIn item_in(&itemObj);
+                            item_in.purchaseQuantity = itemPurchaseQuantity;
+                            item_in.purchasePrice = itemPurchasePrice;
+                            items.push_back(move(item_in));
                         }
                     }
 
@@ -361,9 +338,9 @@ bool retrieveTransaction(int index, SPass& sPass){
             transactionAdd.setItems(items);
             }
 
-            if (numTransactionLimit(transactionArchives, transactionArchivesAge, true, settings)){
-                transactionArchives.emplace(index, transactionAdd);
-                transactionArchivesAge.push(index);
+            if (numTransactionLimit(true, sPass)){
+                sPass.transactionArchives.emplace(index, transactionAdd);
+                sPass.transactionArchivesAge.push(index);
             }
 
             return true;
@@ -374,22 +351,19 @@ bool retrieveTransaction(int index, SPass& sPass){
     return false;
 }
 
-bool numTransactionLimit(SPass& sPass){
-    if (transactionArchives.size() != transactionArchivesAge.size())
+bool numTransactionLimit(bool futureCheck, SPass& sPass){
+    if (sPass.transactionArchives.size() != sPass.transactionArchivesAge.size())
     {
         cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
         return false;
     }
-    if (transactionArchives.size() > settings.getMaxTransactions() - futureCheck) {
-        int removeIndex = transactionArchivesAge.front();
-        transactionArchivesAge.pop();
 
-        if (!checkTransaction(removeIndex)){
-            cerr << "transactionArchive could not be removed";
-            return false;
-        }
+    if (sPass.transactionArchives.size() < sPass.settings.getMaxTransactions() - futureCheck) return true;
 
-        transactionArchives.erase(removeIndex);
+    if (!sPass.transactionArchivesAge.empty()){
+        int removeIndex = sPass.transactionArchivesAge.front();
+        sPass.transactionArchivesAge.pop();
+        sPass.transactionArchives.erase(removeIndex);
         return true;
     }
 
@@ -397,7 +371,8 @@ bool numTransactionLimit(SPass& sPass){
 }
 // Very similar to checkTransaction, but with customers instead.
 bool checkCustomer(int index, SPass& sPass){
-    if (customers.count(index)) return true;
+    if (index < 0) return false;
+    if (sPass.customers.count(index)) return true;
     std::ifstream f("data/customers.json");
     if (!f) {
         std::cerr << "Could not open file";
@@ -423,12 +398,8 @@ bool checkCustomer(int index, SPass& sPass){
 }
 // Very similar to retrieveTransaction, but with customers instead.
 bool retrieveCustomer(int index, SPass& sPass){
-    //TODO: Input validation can be addedhen methods are not called manually
-    // if (index < 0 || index > numCustomers) return false;
-    // if (!checkCustomer(index)) return false;
-    // if (index > settings.getNumCustomers() || index < 0) return false;
-    // if (customers.count(index)) return true;
-    // if (!checkCustomer(index)) return false;
+
+    if (!checkCustomer(index, sPass)) return false;
 
     ifstream f("data/customers.json");
     if (!f) {
@@ -457,33 +428,15 @@ bool retrieveCustomer(int index, SPass& sPass){
                 transactionsAdd = t["transactions"].get<vector<int>>();
             }
 
-            customers.emplace(index, Customer(id, firstName, lateName, phoneNumber));
-            customersAge.push(index);
-            if (credit > 0) customers.at(index).setCredit(credit);
-            if (transactionsAdd.size()) customers.at(index).setTransactions(transactionsAdd);
 
-            if (customers.size() > settings.getMaxCustomers()) {
-                while (!customersAge.empty()){
-                    if (customers.empty()) {
-                        cerr << "customersAge > customers";
-                        customersAge.pop();
-                        break;
-                    }
 
-                    int removeIndex = customersAge.front();
-                    customersAge.pop();
-
-                    if (!checkCustomer(removeIndex)) {
-                        cerr << "transactionArchive could not be removed";
-                        continue;
-                    }
-
-                    customers.erase(removeIndex);
-                    continue;
-
-                }
+            //TODO, add limit check
+            if (numCustomerLimit(true, sPass)){
+                sPass.customers.emplace(index, Customer(id, firstName, lateName, phoneNumber));
+                sPass.customersAge.push(index);
+                if (credit > 0) sPass.customers.at(index).setCredit(credit);
+                if (transactionsAdd.size()) sPass.customers.at(index).setTransactions(transactionsAdd);
             }
-
         }
     }
     return true;
@@ -493,10 +446,8 @@ bool retrieveCustomer(int index, SPass& sPass){
 
 // Very similar to archiveTransaction, but with customers instead.
 bool archiveCustomer(int index, SPass& sPass){
+    if (!checkCustomer(index, sPass)) return false;
 
-    //TODO: Input validation can be added when methods are not called manually.
-    // if (index < 0 || index > numCustomers) return false;
-    // if (!checkCustomer(index)) return false;
     using nlohmann::json; //*
 
     json data;
@@ -516,26 +467,39 @@ bool archiveCustomer(int index, SPass& sPass){
 
 
     // Get transaction from map
-    Customer &customer = customers.at(index); //*
+    Customer &customer = sPass.customers.at(index); //*
 
     // Convert to JSON
-    json t = customer; //*
+    json c = customer; //*
 
     // Append
-    data.push_back(t); //*
 
     // Rewrite file
     std::ofstream out("data/customers.json"); //*
 
+    bool replaced = false;
+    for (auto& entry : data) {
+        if (c.contains("id") && c["id"] == index) {
+            entry = c;
+            replaced = true;
+            break;
+        }
+    }
+
+    if (!replaced) {
+        data.push_back(c); //*
+    }
+
     out << data.dump(4); //*
 
-    settings.addNumCustomers();
+    sPass.settings.addNumCustomers();
     return true;
 }
 
-bool removeCustomerArchive(int index, Settings &settings)
+//check the transaction one
+bool removeCustomer(int index, SPass& sPass)
 {
-    if (index < 0 || index > numCustomers) return false;
+    if (index < 0 || index > sPass.settings.getNumCustomers()) return false;
 
     // Opens and converts JSON file.
     std::ifstream in("data/customers.json");
@@ -576,12 +540,25 @@ bool removeCustomerArchive(int index, Settings &settings)
     return true;
 }
 
-//TODO: Make this smoother.
-bool updateCustomer(int index, SPass& sPass)
-{
-    if (removeCustomerArchive(index, settings) && archiveCustomer(index, settings)) return true;
+bool numCustomerLimit(bool futureCheck, SPass& sPass){
+    if (sPass.customers.size() != sPass.customersAge.size())
+    {
+        cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
+        return false;
+    }
+
+    if (sPass.customers.size() < sPass.settings.getMaxCustomers() - futureCheck) return true;
+
+    if (!sPass.customersAge.empty()){
+        int removeIndex = sPass.customersAge.front();
+        sPass.customersAge.pop();
+        sPass.customers.erase(removeIndex);
+        return true;
+    }
+
     return false;
 }
+
 optional<Item> findItem(int id){
     if (!items.count(id)) return nullopt;
     return items.at(id);
