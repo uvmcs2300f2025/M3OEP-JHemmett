@@ -54,9 +54,9 @@ string Customer::getphoneNumberFancy() const{
     return number;
 }
 
-Transaction* Customer::getPendingTransaction() const {return pendingTransaction;}
+Transaction* Customer::getPendingTransaction() const {return pendingTransaction.get();}
 
-void Customer::setpendingTransaction(Transaction* pendingTransaction) {this->pendingTransaction = pendingTransaction;}
+void Customer::setpendingTransaction(unique_ptr<Transaction>pendingTransaction) {this->pendingTransaction = move(pendingTransaction);}
 
 int Customer::getCustomerId() const
 {

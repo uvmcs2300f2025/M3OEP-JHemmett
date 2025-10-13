@@ -2,7 +2,7 @@
     {
         "credit": 10,
         "firstName": "Jonas",
-        "id": 1,
+        "id": 0,
         "lastName": "H",
         "phoneNumber": "8023632222",
         "transactions": []

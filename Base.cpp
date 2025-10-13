@@ -166,11 +166,22 @@ void runProgram(){
     PaymentPortal paymentPortal;
     SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal);
 
-    int number = userInput<int>("Enter your customer ID Number:");
+    int cId = userInput<int>("Please enter your customer ID\n(type your customer ID or 0 for no account)");
+
+    // Todo, make sure 0 customer exists, other input validation as well.
+    Customer& customerUse = (cId > 0 && retrieveCustomer(cId, sPass)) ? customers.at[cId] : customers.at[0];
+
+    if(cId == 0) {
+        cout << "No Customer" << endl;
+    } else if(checkCustomer(cId, sPass)) {
+        retrieveCustomer(cId, sPass);
+        cout << "Welcome back " << customerUse.getFirstName() << endl;
+    } else {
+        cout << "New Customer" << endl;
+    }
 
 }
-void TransactionTester1()
-{
+void TransactionTester1(){
     int numtransactions = 0;
     PaymentPortal p1;
     Item i1(1234, "Carrot", 1, 10);
@@ -207,15 +218,13 @@ bool checkTransaction(int index, SPass& sPass){
     f >> data;
     f.close();
 
-
-    if (!data.is_array()) {
+   if (!data.is_array()) {
         std::cerr << "JSON is not an array";
         return false;
     }
 
     // Loops through the transaction file looking for a matching ID.
-    for (const auto& t : data)
-    {
+    for (const auto& t : data){
         if (t.contains("id") && t["id"] == index) return true;
     }
 
@@ -686,4 +695,38 @@ dataType userInput(string messege){
     }
 
 // End of userInput
+}
+
+bool retrieveItems(SPass& sPass){
+
+    if (!checkCustomer(index, sPass)) return false;
+
+    ifstream f("data/items.json");
+    if (!f) {
+        std::cerr << "Could not open file";
+        return false;
+    }
+
+    nlohmann::json data;
+    f >> data;
+    f.close();
+
+    if (!data.is_array()) {
+        std::cerr << "JSON is not an array";
+        return false;
+    }
+    vector<int> transactionsAdd;
+
+    for (const auto& t : data){
+        if (t.contains("id") && t["id"] == index){
+            int id = t.value("id", -1);
+            string name = t.value("name", "NULL");
+            int name = t.value("price", 0);
+            int quantity = t.value("quantity", 0);
+
+            transactions.emplace(id, Item(id, name, price,quantity));
+            }
+        }
+    }
+    return true;
 }

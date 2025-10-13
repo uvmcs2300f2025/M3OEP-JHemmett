@@ -3,6 +3,8 @@
 //
 #include <string>
 #include <iostream>
+#include "include/json.hpp"
+
 
 #ifndef ITEM_H
 #define ITEM_H
@@ -53,4 +55,7 @@ public:
 
   bool operator==(const Item& other) const;
 };
+
+void to_json(nlohmann::json& j, const Item& t);
+
 #endif //ITEM_H

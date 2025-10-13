@@ -13,8 +13,9 @@
 class Settings {
 private:
   const std::string path;
-  int numTransactions = 0;
-  int numCustomers = 0;
+  // The 0th customer is used for people not logged in, transactions start at 1 to match for simplicity’s sake
+  int numTransactions = 1;
+  int numCustomers = 1;
   int maxTransactions = 2;
   int maxCustomers = 2;
 

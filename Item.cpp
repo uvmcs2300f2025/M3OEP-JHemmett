@@ -56,3 +56,14 @@ std::ostream& operator<<(std::ostream& os, const Item& obj){
   os << obj.name << "(" << obj.id << ") " << obj.quantity << "x " << obj.holdQuantity << "xHold $" << obj.price;
   return os;
 }
+
+void to_json(nlohmann::json& j, const Item& t){
+  j = nlohmann::json{
+    // https://json.nlohmann.me/api/basic_json/array/
+{"id", t.getId()},
+{"name", t.getName()},
+{"price", t.getPrice()},
+{"quantity", t.getQuantity()},
+        };
+
+}

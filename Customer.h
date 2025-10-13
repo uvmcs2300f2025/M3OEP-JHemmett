@@ -2,7 +2,7 @@
 #ifndef CUSTOMER_H
 #define CUSTOMER_H
 #include "include/json.hpp"
-
+#include <memory>
 #include <list>
 #include <string>
 #include <vector>
@@ -18,7 +18,8 @@ private:
     std::string lastName;
     int credit;
     std::string phoneNumber;
-    Transaction* pendingTransaction;
+    // Way easier to manage than a normal pointer
+    std::unique_ptr<Transaction> pendingTransaction;
     std::vector<int> transactions;
 
 public:
@@ -43,7 +44,7 @@ public:
     bool takeCredit(int credit);
 
     Transaction* getPendingTransaction() const;
-    void setpendingTransaction(Transaction* pendingTransaction);
+    void setpendingTransaction( std::unique_ptr<Transaction> pendingTransaction);
 
     void setCustomerId(int customerId);
     int getCustomerId() const;
@@ -53,8 +54,6 @@ public:
     std::vector<int> getTransactions() const;
 
     friend std::ostream& operator<<(std::ostream& os, const Customer& obj);
-
-
 
 };
 void to_json(nlohmann::json& j, const Customer& t);
