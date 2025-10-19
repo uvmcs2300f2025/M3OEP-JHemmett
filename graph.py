@@ -29,6 +29,7 @@ def viewCustomerPurchases(size):
     plt.show()
 
 def customerPurchasesMenu():
+    # Finds the number of customers, used 
     try:
         with open('data/customers.json', 'r') as file:
             customers = json.load(file)
@@ -37,6 +38,7 @@ def customerPurchasesMenu():
         print("Could not open customers.json")
         maxCustomers = -1
 
+    choice = None
     while True:
         try:
             if maxCustomers == -1:
@@ -48,7 +50,7 @@ def customerPurchasesMenu():
                 choice = 1
                 break
             else:
-                choice = int(input(f"How many customers?\n(Enter a number between 0 and {maxCustomers}): "))
+                choice = int(input(f"How many customers?\n(Enter a number between 1 and {maxCustomers}): "))
 
         except:
             None
@@ -57,6 +59,10 @@ def customerPurchasesMenu():
             if not(choice < 0):
                 break
         else:
+            # Defaults to showing all customers
+            if not(choice):
+                choice = maxCustomers
+                break
             if not(choice < 0 or choice > maxCustomers):
                 break
         
@@ -66,6 +72,7 @@ def customerPurchasesMenu():
 plt.show()
 if __name__ == "__main__":
 
+    choice = None
     while True:
         try:
             choice = int(input("What graphs would you like to view?\n(1: Customer Purchases): "))
