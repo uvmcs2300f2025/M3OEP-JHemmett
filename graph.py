@@ -8,9 +8,6 @@ def viewCustomerPurchases(size):
     with open('data/customers.json', 'r') as file:
         customers = json.load(file)
 
-    if len(customers) > size:
-        print("Error: len(customers) > size")
-        size = len(customers)
     # Lambda function sort helper
     getNumTransactions = lambda c: len(c["transactions"])
     customers.sort(key = getNumTransactions, reverse = True)
@@ -42,7 +39,17 @@ def customerPurchasesMenu():
 
     while True:
         try:
-            choice = int(input("How many customers?\n(Enter number of customers): "))
+            if maxCustomers == -1:
+                choice = int(input("How many customers?\n(Enter a number): "))
+            elif maxCustomers == 0:
+                print("There are 0 customers")
+                return
+            elif maxCustomers == 1:
+                choice = 1
+                break
+            else:
+                choice = int(input(f"How many customers?\n(Enter a number between 0 and {maxCustomers}): "))
+
         except:
             None
         
