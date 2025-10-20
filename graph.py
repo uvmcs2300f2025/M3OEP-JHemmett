@@ -69,6 +69,8 @@ def customerPurchasesMenu():
         print("Invalid Choice")
     viewCustomerPurchases(choice)
 
+def viewVustomer(string id):
+    pass
 plt.show()
 if __name__ == "__main__":
 
