@@ -123,6 +123,48 @@ def viewCustomer(id):
 
     plt.show()
 
+def customerMenu():
+    #TODO: If customers are removed, the limit should not be based
+     # Finds the number of customers, used 
+    try:
+        with open('data/customersTest.json', 'r') as file:
+            customers = json.load(file)
+            maxCustomers = len(customers)
+    except:
+        print("Could not open customersTest.json")
+        maxCustomers = -1
+
+    choice = None
+    while True:
+        try:
+            if maxCustomers == -1:
+                choice = int(input("How many customers?\n(Enter a number): "))
+            elif maxCustomers == 0:
+                print("There are 0 customers")
+                return
+            elif maxCustomers == 1:
+                choice = 1
+                break
+            else:
+                choice = int(input(f"How many customers?\n(Enter a number between 1 and {maxCustomers}): "))
+
+        except:
+            None
+        
+        if maxCustomers == -1:
+            if not(choice < 0):
+                break
+        else:
+            # Defaults to showing all customers
+            if not(choice):
+                choice = maxCustomers
+                break
+            if not(choice < 0 or choice > maxCustomers):
+                break
+        
+        print("Invalid Choice")
+    viewCustomer(choice)
+
 if __name__ == "__main__":
 
     choice = None
