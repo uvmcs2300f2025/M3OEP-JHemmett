@@ -62,7 +62,7 @@ void TransactionTester1();
 
 bool createTransaction(int index, SPass& sPass);
 
-bool numTransactionLimit(bool futureCheck, SPass& sPass);
+void numTransactionLimit(bool futureCheck, SPass& sPass);
 /*
     Purpose: Checks if a transaction exists
 
@@ -237,7 +237,9 @@ bool archiveTransaction(int index, SPass& sPass) {
     if (!checkTransaction(index, sPass)) return false;
 
     sPass.transactions.at(index).completeTransaction();
-    sPass.transactions.at(index).getCustomer()->addTransaction(index);
+    if (sPass.transactions.at(index).getCustomer()) {
+        sPass.transactions.at(index).getCustomer()->addTransaction(index);
+    }
 
     using nlohmann::json; //*
 
@@ -278,12 +280,7 @@ bool archiveTransaction(int index, SPass& sPass) {
     out << data.dump(4); //*
     out.close(); //*
 
-    if (numTransactionLimit(true, sPass)){
-        auto transactionMove = sPass.transactions.extract(index);
-        sPass.transactionArchives.insert(move(transactionMove));
-        sPass.transactionArchivesAge.push(index);
-        sPass.settings.addNumTransactions();
-    }
+
     return true;
 }
 
@@ -323,10 +320,7 @@ bool retrieveTransaction(int index, SPass& sPass){
             int customerId = t.value("customerId", -1);  //*
             int totalCost   = t.value("totalCost", 0.0);  //*
 
-            //TODO: Input validation
-            retrieveCustomer(customerId, sPass);
-            Transaction transactionAdd(&sPass.paymentPortal, &sPass.customers.at(customerId), totalCost);
-
+            Transaction transactionAdd(&sPass.paymentPortal, (retrieveCustomer(customerId, sPass)) ? &sPass.customers.at(customerId) : nullptr, totalCost);
 
             vector<ItemIn> items;
             if (t.contains("items") && t["items"].is_array()) {
@@ -341,31 +335,26 @@ bool retrieveTransaction(int index, SPass& sPass){
                         itemId = itemArr[0].get<int>();
                         itemPurchaseQuantity = itemArr[1].get<int>();
                         itemPurchasePrice = itemArr[2].get<int>();
-                        cout << "Made it here1.5" << endl;
 
-                        if (auto itemObj = findItem(itemId)) { //*
-                            ItemIn item_in(itemObj);
-                            item_in.purchaseQuantity = itemPurchaseQuantity;
-                            item_in.purchasePrice = itemPurchasePrice;
-                            items.push_back(move(item_in));
+                        ItemIn itemIn(nullptr);
+
+                        if (auto itemObj = findItem(itemId)) {
+                            itemIn.item = findItem(itemId);
                         }
+                        itemIn.purchaseQuantity = itemPurchaseQuantity;
+                        itemIn.purchasePrice = itemPurchasePrice;
+                        items.push_back(itemIn);
                     }
 
                 }
-            cout << "Made it here2" << endl;
-
+            }
             transactionAdd.setItems(items);
-            }
 
-            cout << "Made it here3" << endl;
-            if (numTransactionLimit(true, sPass) && !sPass.transactionArchives.count(index)){
-                sPass.transactionArchives.emplace(index, transactionAdd);
-                sPass.transactionArchivesAge.push(index);
-            } else {
-                cout << "error here" << endl;
-            }
-
+            numTransactionLimit(true, sPass);
+            sPass.transactionArchives.emplace(index, move(transactionAdd));
+            sPass.transactionArchivesAge.push(index);
             return true;
+
         }
 
     }
@@ -373,23 +362,18 @@ bool retrieveTransaction(int index, SPass& sPass){
     return false;
 }
 
-bool numTransactionLimit(bool futureCheck, SPass& sPass){
+// TODO Match customer
+void numTransactionLimit(bool futureCheck, SPass& sPass){
     if (sPass.transactionArchives.size() != sPass.transactionArchivesAge.size())
     {
         cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
-        return false;
     }
-
-    if (sPass.transactionArchives.size() < sPass.settings.getMaxTransactions() - futureCheck) return true;
-
-    if (!sPass.transactionArchivesAge.empty()){
+    if (sPass.transactionArchives.size() > sPass.settings.getMaxTransactions() - futureCheck && !sPass.transactionArchivesAge.empty()){
         int removeIndex = sPass.transactionArchivesAge.front();
         sPass.transactionArchivesAge.pop();
         sPass.transactionArchives.erase(removeIndex);
-        return true;
     }
 
-    return false;
 }
 // Very similar to checkTransaction, but with customers instead.
 bool checkCustomer(int index, SPass& sPass){
@@ -459,9 +443,11 @@ bool retrieveCustomer(int index, SPass& sPass){
                 if (credit > 0) sPass.customers.at(index).setCredit(credit);
                 if (transactionsAdd.size()) sPass.customers.at(index).setTransactions(transactionsAdd);
             }
+
+            return true;
         }
     }
-    return true;
+    return false;
 }
 
 

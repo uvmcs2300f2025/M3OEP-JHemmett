@@ -408,15 +408,14 @@ bool mainTest(){
   while (transactionArchivesAge.size()) transactionArchivesAge.pop();
 
   retrieveTransaction(2, sPass);
-
-  if (transactions.size() != 1){
+  if (transactionArchives.size() != 1){
     passed = false;
-    cout << "transaction.size(), after  retrieveTransaction(2, settings), is not 1, but: " << transactions.size() << endl;
+    cout << "transactionArchives.size(), after  retrieveTransaction(2, settings), is not 1, but: " << transactionArchives.size() << endl;
   }
 
   if (transactionArchivesAge.size() != 1){
     passed = false;
-    cout << "transactionArchivesAge.size, after  retrieveTransaction(2, settings), is not 1, but: " << customersAge.size() << endl;
+    cout << "transactionArchivesAge.size, after  retrieveTransaction(2, settings), is not 1, but: " << transactionArchivesAge.size() << endl;
   }
 
   return passed;
