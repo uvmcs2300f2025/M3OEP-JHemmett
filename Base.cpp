@@ -313,7 +313,13 @@ bool retrieveTransaction(int index, SPass& sPass){
     }
 
     for (const auto& t : data){ //*
+        cout << "Made it here1" << endl;
+
+        cout << "t: " << t << endl;
+        cout << "index: " << index << endl;
         if (t.contains("id") && t["id"] == index){
+            cout << "Made it here1.1" << endl;
+
             int customerId = t.value("customerId", -1);  //*
             int totalCost   = t.value("totalCost", 0.0);  //*
 
@@ -330,11 +336,12 @@ bool retrieveTransaction(int index, SPass& sPass){
                 //*
                 auto itemsVec = t["items"].get<std::vector<nlohmann::json>>(); //*
 
-                for (const auto& item : itemsVec){ //*
-                    if (itemsVec.size() == 3) {  //*
-                        itemId = itemsVec[0].get<int>();
-                        itemPurchaseQuantity = itemsVec[1].get<int>();
-                        itemPurchasePrice = itemsVec[2].get<int>();
+                for (const auto& itemArr : itemsVec){ //*
+                    if (itemArr.size() == 3) {  //*
+                        itemId = itemArr[0].get<int>();
+                        itemPurchaseQuantity = itemArr[1].get<int>();
+                        itemPurchasePrice = itemArr[2].get<int>();
+                        cout << "Made it here1.5" << endl;
 
                         if (auto itemObj = findItem(itemId)) { //*
                             ItemIn item_in(itemObj);
@@ -345,12 +352,17 @@ bool retrieveTransaction(int index, SPass& sPass){
                     }
 
                 }
+            cout << "Made it here2" << endl;
+
             transactionAdd.setItems(items);
             }
 
-            if (numTransactionLimit(true, sPass)){
+            cout << "Made it here3" << endl;
+            if (numTransactionLimit(true, sPass) && !sPass.transactionArchives.count(index)){
                 sPass.transactionArchives.emplace(index, transactionAdd);
                 sPass.transactionArchivesAge.push(index);
+            } else {
+                cout << "error here" << endl;
             }
 
             return true;
@@ -431,7 +443,7 @@ bool retrieveCustomer(int index, SPass& sPass){
         if (t.contains("id") && t["id"] == index){
             int id = t.value("id", -1);
             string firstName = t.value("firstName", "NULL");
-            string lateName = t.value("lastName", "NULL");
+            string lastName = t.value("lastName", "NULL");
             string phoneNumber = t.value("phoneNumber", "0000000000");
             int credit = t.value("credit", 0);
             if (t.contains("transactions") && t["transactions"].is_array()){
@@ -442,7 +454,7 @@ bool retrieveCustomer(int index, SPass& sPass){
 
             //TODO, add limit check
             if (numCustomerLimit(true, sPass)){
-                sPass.customers.emplace(index, Customer(id, firstName, lateName, phoneNumber));
+                sPass.customers.emplace(index, Customer(id, firstName, lastName, phoneNumber));
                 sPass.customersAge.push(index);
                 if (credit > 0) sPass.customers.at(index).setCredit(credit);
                 if (transactionsAdd.size()) sPass.customers.at(index).setTransactions(transactionsAdd);

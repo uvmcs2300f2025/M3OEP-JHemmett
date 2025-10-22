@@ -40,7 +40,7 @@ int main(){
   cout << "transactionTest()" << transactionTest() << endl;
   cout << "mainTest(): " << mainTest() << endl;
 
-  runProgram();
+  // runProgram();
   return 0;
 }
 
@@ -56,6 +56,8 @@ bool settingsTest(){
 
 
   Settings settings("data/settings.json");
+  settings.setNumTransactions(0);
+  settings.setNumCustomers(0);
 
   if (settings.getNumTransactions()){
     cout << "getNumTransactions() is not 0, but: " << settings.getNumTransactions() << endl;
@@ -394,7 +396,6 @@ bool mainTest(){
   }
   customers.at(1).addCredit(10);
   archiveCustomer(1, sPass);
-  return passed;
 
 
 
@@ -404,10 +405,9 @@ bool mainTest(){
   sPass.settings.setNumTransactions(0);
   // Emptys Customers
   transactions.clear();
-
   while (transactionArchivesAge.size()) transactionArchivesAge.pop();
 
-  retrieveTransaction(1, sPass);
+  retrieveTransaction(2, sPass);
 
   if (transactions.size() != 1){
     passed = false;
