@@ -60,7 +60,8 @@ dataType userInput(string messege);
 
 void TransactionTester1();
 
-bool createTransaction(int index, SPass& sPass);
+bool createTransaction(int customerIndex, SPass& sPass);
+bool createTransaction(SPass& sPass);
 
 void numTransactionLimit(bool futureCheck, SPass& sPass);
 /*
@@ -134,7 +135,7 @@ bool removeCustomer(int index, SPass& sPass);
     Output: Item Object
 */
 
-bool numCustomerLimit(bool futureCheck, SPass& sPass);
+void numCustomerLimit(bool futureCheck, SPass& sPass);
 
 Item* findItem(int id);
 
@@ -148,10 +149,10 @@ Customer createCustomerInput();
 
   Output: whether the customer could create
 */
-//TODO: Finish this
-bool createCustomer();
+bool createCustomer(Customer& customer, SPass& sPass);
 
 //TODO: createTransaction()
+
 
 
 //TODO: A lot of the code in here should be separate functions
@@ -237,8 +238,9 @@ bool archiveTransaction(int index, SPass& sPass) {
     if (!checkTransaction(index, sPass)) return false;
 
     sPass.transactions.at(index).completeTransaction();
-    if (sPass.transactions.at(index).getCustomer()) {
+    if (sPass.transactions.at(index).getCustomer() != nullptr) {
         sPass.transactions.at(index).getCustomer()->addTransaction(index);
+        sPass.transactions.at(index).getCustomer()->setpendingTransaction(nullptr);
     }
 
     using nlohmann::json; //*
@@ -280,6 +282,10 @@ bool archiveTransaction(int index, SPass& sPass) {
     out << data.dump(4); //*
     out.close(); //*
 
+    numTransactionLimit(true, sPass);
+    sPass.transactionArchives.emplace(index, move(sPass.transactions.at(index)));
+    sPass.transactions.erase(index);
+    sPass.transactionArchivesAge.push(index);
 
     return true;
 }
@@ -310,12 +316,8 @@ bool retrieveTransaction(int index, SPass& sPass){
     }
 
     for (const auto& t : data){ //*
-        cout << "Made it here1" << endl;
 
-        cout << "t: " << t << endl;
-        cout << "index: " << index << endl;
         if (t.contains("id") && t["id"] == index){
-            cout << "Made it here1.1" << endl;
 
             int customerId = t.value("customerId", -1);  //*
             int totalCost   = t.value("totalCost", 0.0);  //*
@@ -437,12 +439,12 @@ bool retrieveCustomer(int index, SPass& sPass){
 
 
             //TODO, add limit check
-            if (numCustomerLimit(true, sPass)){
-                sPass.customers.emplace(index, Customer(id, firstName, lastName, phoneNumber));
-                sPass.customersAge.push(index);
-                if (credit > 0) sPass.customers.at(index).setCredit(credit);
-                if (transactionsAdd.size()) sPass.customers.at(index).setTransactions(transactionsAdd);
-            }
+            numCustomerLimit(true, sPass);
+            sPass.customers.emplace(index, Customer(id, firstName, lastName, phoneNumber));
+            sPass.customersAge.push(index);
+            if (credit > 0) sPass.customers.at(index).setCredit(credit);
+            if (transactionsAdd.size()) sPass.customers.at(index).setTransactions(transactionsAdd);
+
 
             return true;
         }
@@ -548,23 +550,17 @@ bool removeCustomer(int index, SPass& sPass)
     return true;
 }
 
-bool numCustomerLimit(bool futureCheck, SPass& sPass){
+void numCustomerLimit(bool futureCheck, SPass& sPass){
     if (sPass.customers.size() != sPass.customersAge.size())
     {
         cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
-        return false;
     }
 
-    if (sPass.customers.size() < sPass.settings.getMaxCustomers() - futureCheck) return true;
-
-    if (!sPass.customersAge.empty()){
+    if (sPass.customers.size() > sPass.settings.getMaxCustomers() - futureCheck && !sPass.customersAge.empty()){
         int removeIndex = sPass.customersAge.front();
         sPass.customersAge.pop();
         sPass.customers.erase(removeIndex);
-        return true;
     }
-
-    return false;
 }
 
 Item* findItem(int id){
@@ -652,9 +648,29 @@ Customer createCustomerInput(){
 // End of createCustomer
 }
 
-void CreateCustomer(Customer& customer)
-{
+bool CreateCustomer(Customer& customer, SPass& sPass){
+    int index = sPass.settings.getNumCustomers();
+    numCustomerLimit(true, sPass);
+    sPass.customers.emplace(index, customer);
+    sPass.customersAge.emplace(index);
+    archiveCustomer(index, sPass);
+    sPass.settings.addNumCustomers();
+}
 
+bool createTransaction(int customerIndex, SPass& sPass) {
+
+    if (!checkCustomer(customerIndex, sPass)) {
+        return false;
+    }
+    sPass.transactions.emplace(sPass.settings.getNumCustomers(), Transaction(&sPass.paymentPortal, &sPass.customers.at(customerIndex), sPass.settings.getNumCustomers()));
+    sPass.settings.addNumCustomers();
+    return true;
+}
+
+bool createTransaction(SPass& sPass) {
+    sPass.transactions.emplace(sPass.settings.getNumCustomers(), Transaction(&sPass.paymentPortal, nullptr, sPass.settings.getNumCustomers()));
+    sPass.settings.addNumCustomers();
+    return true;
 }
 // Allows for multiple input types using one function.
 template <typename dataType>
