@@ -282,10 +282,10 @@ bool archiveTransaction(int index, SPass& sPass) {
     out << data.dump(4); //*
     out.close(); //*
 
-    numTransactionLimit(true, sPass);
     sPass.transactionArchives.emplace(index, move(sPass.transactions.at(index)));
     sPass.transactions.erase(index);
     sPass.transactionArchivesAge.push(index);
+    numTransactionLimit(true, sPass);
 
     return true;
 }
@@ -352,9 +352,10 @@ bool retrieveTransaction(int index, SPass& sPass){
             }
             transactionAdd.setItems(items);
 
-            numTransactionLimit(true, sPass);
             sPass.transactionArchives.emplace(index, move(transactionAdd));
             sPass.transactionArchivesAge.push(index);
+            numTransactionLimit(true, sPass);
+
             return true;
 
         }
@@ -366,6 +367,9 @@ bool retrieveTransaction(int index, SPass& sPass){
 
 // TODO Match customer
 void numTransactionLimit(bool futureCheck, SPass& sPass){
+    cout << "called" << endl;
+    cout << "sPass.transactionArchives.size()" << sPass.transactionArchives.size() << endl;
+    cout << "sPass.transactionArchivesAge.size()" << sPass.transactionArchivesAge.size() << endl;
     if (sPass.transactionArchives.size() != sPass.transactionArchivesAge.size())
     {
         cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
@@ -439,11 +443,11 @@ bool retrieveCustomer(int index, SPass& sPass){
 
 
             //TODO, add limit check
-            numCustomerLimit(true, sPass);
             sPass.customers.emplace(index, Customer(id, firstName, lastName, phoneNumber));
             sPass.customersAge.push(index);
             if (credit > 0) sPass.customers.at(index).setCredit(credit);
             if (transactionsAdd.size()) sPass.customers.at(index).setTransactions(transactionsAdd);
+            numCustomerLimit(true, sPass);
 
 
             return true;
@@ -650,11 +654,12 @@ Customer createCustomerInput(){
 
 bool CreateCustomer(Customer& customer, SPass& sPass){
     int index = sPass.settings.getNumCustomers();
-    numCustomerLimit(true, sPass);
     sPass.customers.emplace(index, customer);
     sPass.customersAge.emplace(index);
     archiveCustomer(index, sPass);
     sPass.settings.addNumCustomers();
+    numCustomerLimit(true, sPass);
+
 }
 
 bool createTransaction(int customerIndex, SPass& sPass) {
