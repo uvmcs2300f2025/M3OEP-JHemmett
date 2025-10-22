@@ -155,9 +155,14 @@ void to_json(nlohmann::json& j, const Transaction& t){
 
   for (const ItemIn item : t.getTransaction())
   {
-    j["items"].push_back(item.item->getId());
-    j["items"].push_back(item.purchaseQuantity);
-    j["items"].push_back(item.purchasePrice);
+
+    nlohmann::json itemA = nlohmann::json::array({
+      item.item->getId(),
+      item.purchaseQuantity,
+      item.purchasePrice
+    });
+
+    j["items"].push_back(itemA);
 
 
   }

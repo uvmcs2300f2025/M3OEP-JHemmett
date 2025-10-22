@@ -54,9 +54,9 @@ string Customer::getphoneNumberFancy() const{
     return number;
 }
 
-Transaction* Customer::getPendingTransaction() const {return pendingTransaction.get();}
+Transaction* Customer::getPendingTransaction() const {return pendingTransaction;}
 
-void Customer::setpendingTransaction(unique_ptr<Transaction>pendingTransaction) {this->pendingTransaction = move(pendingTransaction);}
+void Customer::setpendingTransaction(Transaction* pendingTransaction) {this->pendingTransaction = pendingTransaction;}
 
 int Customer::getCustomerId() const
 {
@@ -85,6 +85,7 @@ std::ostream& operator<<(std::ostream& os, const Customer& obj) {
     return os;
 
 }
+
 
 void to_json(nlohmann::json& j, const Customer& t){
     j = nlohmann::json{

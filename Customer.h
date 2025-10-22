@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+
 // https://www.geeksforgeeks.org/cpp/what-are-forward-declarations-in-c/
 
 class Transaction;
@@ -18,8 +19,8 @@ private:
     std::string lastName;
     int credit;
     std::string phoneNumber;
-    // Way easier to manage than a normal pointer
-    std::unique_ptr<Transaction> pendingTransaction;
+    // Smart pointers were a headache
+    Transaction* pendingTransaction = nullptr;
     std::vector<int> transactions;
 
 public:
@@ -44,7 +45,7 @@ public:
     bool takeCredit(int credit);
 
     Transaction* getPendingTransaction() const;
-    void setpendingTransaction( std::unique_ptr<Transaction> pendingTransaction);
+    void setpendingTransaction(Transaction* pendingTransaction);
 
     void setCustomerId(int customerId);
     int getCustomerId() const;

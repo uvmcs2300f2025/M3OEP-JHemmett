@@ -136,7 +136,7 @@ bool removeCustomer(int index, SPass& sPass);
 
 bool numCustomerLimit(bool futureCheck, SPass& sPass);
 
-optional<Item> findItem(int id);
+Item* findItem(int id);
 
 /*
   Creates a customer from user input
@@ -169,7 +169,7 @@ void runProgram(){
     int cId = userInput<int>("Please enter your customer ID\n(type your customer ID or 0 for no account)");
 
     // Todo, make sure 0 customer exists, other input validation as well.
-    Customer& customerUse = (cId > 0 && retrieveCustomer(cId, sPass)) ? customers.at[cId] : customers.at[0];
+    Customer& customerUse = (cId > 0 && retrieveCustomer(cId, sPass)) ? customers.at(cId) : customers.at(0);
 
     if(cId == 0) {
         cout << "No Customer" << endl;
@@ -288,6 +288,7 @@ bool archiveTransaction(int index, SPass& sPass) {
 }
 
 // I copied some of this from https://json.nlohmann.me and https://www.youtube.com/watch?v=Sa8bdVogGIo, copied lines are marked with *
+// I used a lot of JSON array parsing stuff as well from https://codesignal.com/learn/courses/parsing-json-with-csharp/lessons/parsing-json-arrays-and-nested-structures and https://www.w3schools.com/js/js_json_arrays.asp
 bool retrieveTransaction(int index, SPass& sPass){
     //TODO: Input validation can be added when methods are not called manually
     // if (index < 0 || index > numCustomers) return false;
@@ -328,15 +329,15 @@ bool retrieveTransaction(int index, SPass& sPass){
                 int itemId = 0;
                 //*
                 auto itemsVec = t["items"].get<std::vector<nlohmann::json>>(); //*
+
                 for (const auto& item : itemsVec){ //*
-                    if (itemsVec.size() >= 4) {  //*
+                    if (itemsVec.size() == 3) {  //*
                         itemId = itemsVec[0].get<int>();
                         itemPurchaseQuantity = itemsVec[1].get<int>();
                         itemPurchasePrice = itemsVec[2].get<int>();
 
-                        if (auto itemObjOpt = findItem(itemId)) { //*
-                            Item itemObj = *itemObjOpt;
-                            ItemIn item_in(&itemObj);
+                        if (auto itemObj = findItem(itemId)) { //*
+                            ItemIn item_in(itemObj);
                             item_in.purchaseQuantity = itemPurchaseQuantity;
                             item_in.purchasePrice = itemPurchasePrice;
                             items.push_back(move(item_in));
@@ -568,9 +569,9 @@ bool numCustomerLimit(bool futureCheck, SPass& sPass){
     return false;
 }
 
-optional<Item> findItem(int id){
-    if (!items.count(id)) return nullopt;
-    return items.at(id);
+Item* findItem(int id){
+    if (!items.count(id)) return nullptr;
+    return &items.at(id);
 }
 
 
@@ -697,36 +698,36 @@ dataType userInput(string messege){
 // End of userInput
 }
 
-bool retrieveItems(SPass& sPass){
-
-    if (!checkCustomer(index, sPass)) return false;
-
-    ifstream f("data/items.json");
-    if (!f) {
-        std::cerr << "Could not open file";
-        return false;
-    }
-
-    nlohmann::json data;
-    f >> data;
-    f.close();
-
-    if (!data.is_array()) {
-        std::cerr << "JSON is not an array";
-        return false;
-    }
-    vector<int> transactionsAdd;
-
-    for (const auto& t : data){
-        if (t.contains("id") && t["id"] == index){
-            int id = t.value("id", -1);
-            string name = t.value("name", "NULL");
-            int name = t.value("price", 0);
-            int quantity = t.value("quantity", 0);
-
-            transactions.emplace(id, Item(id, name, price,quantity));
-            }
-        }
-    }
-    return true;
-}
+// bool retrieveItems(SPass& sPass){
+//
+//     if (!checkCustomer(index, sPass)) return false;
+//
+//     ifstream f("data/items.json");
+//     if (!f) {
+//         std::cerr << "Could not open file";
+//         return false;
+//     }
+//
+//     nlohmann::json data;
+//     f >> data;
+//     f.close();
+//
+//     if (!data.is_array()) {
+//         std::cerr << "JSON is not an array";
+//         return false;
+//     }
+//     vector<int> transactionsAdd;
+//
+//     for (const auto& t : data){
+//         if (t.contains("id") && t["id"] == index){
+//             int id = t.value("id", -1);
+//             string name = t.value("name", "NULL");
+//             int name = t.value("price", 0);
+//             int quantity = t.value("quantity", 0);
+//
+//             transactions.emplace(id, Item(id, name, price,quantity));
+//             }
+//         }
+//     }
+//     return true;
+// }

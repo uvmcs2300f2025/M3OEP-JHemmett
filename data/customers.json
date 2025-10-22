@@ -2,52 +2,9 @@
     {
         "credit": 10,
         "firstName": "Jonas",
-        "id": 0,
+        "id": 1,
         "lastName": "H",
         "phoneNumber": "8023632222",
-        "transactions": ["1", "2"]
-    },
-    {
-        "credit": 10,
-        "firstName": "Jonas2",
-        "id": 2,
-        "lastName": "H",
-        "phoneNumber": "8023632222",
-        "transactions": [
-            "3"
-        ]
-    },
-    {
-        "credit": 10,
-        "firstName": "Jonas3",
-        "id": 3,
-        "lastName": "H",
-        "phoneNumber": "8023632222",
-        "transactions": [
-            "4",
-            "5"
-        ]
-    },
-    {
-        "credit": 10,
-        "firstName": "Jonas4",
-        "id": 4,
-        "lastName": "H",
-        "phoneNumber": "8023632222",
-        "transactions": [
-            "6",
-            "7",
-            "8",
-            "9"
-        ]
-    },
-    {
-        "credit": 10,
-        "firstName": "Jonas5",
-        "id": 5,
-        "lastName": "H",
-        "phoneNumber": "8023632222",
-        "transactions": [
-        ]
+        "transactions": []
     }
 ]

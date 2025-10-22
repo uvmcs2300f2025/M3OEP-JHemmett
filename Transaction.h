@@ -14,7 +14,6 @@
 #define TRANSACTION_H
 
 
-
 class Transaction {
 private:
     vector<ItemIn> items;
