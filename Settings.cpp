@@ -62,3 +62,22 @@ void Settings::addNumCustomers() {
 
 int Settings::getMaxTransactions() const {return maxTransactions;}
 int Settings::getMaxCustomers() const {return maxCustomers;}
+
+int Settings::getNumItems() const {return numItems;}
+void Settings::setNumItems(int numItems) {
+  this->numItems=numItems;
+  updateFile();
+}
+void Settings::addNumItems() {
+  numItems++;
+  updateFile();
+}
+
+void Settings::wipe() {
+  numTransactions = 1;
+  numCustomers = 1;
+  numItems = 1;
+  maxTransactions = 2;
+  maxCustomers = 2;
+  updateFile();
+}

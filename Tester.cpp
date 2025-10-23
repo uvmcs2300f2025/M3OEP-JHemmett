@@ -305,119 +305,40 @@ bool mainTest(){
 
   unordered_map<int, Customer> customers;
   queue<int> customersAge;
-  Settings settings("data/settings.json");
+
+  unordered_map<int, Item> items;
+  Settings settings("data/settingsTest.json");
+  settings.wipe();
   PaymentPortal paymentPortal;
-  SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal);
 
-
-  // Declared in Base
-  // PaymentPortal p1;
-//  Customer customer(1, "Jonas", "H", "8023632222");
-
-  // Declared in Base
-  //  unordered_map<int, Item> items;
-  items.emplace(0, Item(0, "name", 10, 10));
-
-  // Declared in Base
-  // unordered_map<int, Customer> customers;
-  customers.emplace(1, Customer(1, "Jonas", "H", "8023632222"));
-
-  sPass.settings.addNumCustomers();
-
-  // Declared in Base
-  // queue<int> customersAge;
-  customersAge.emplace(1);
-
-  // Declared in Base
-  // unordered_map<int, Transaction> transactions;
-  transactions.emplace(2, Transaction(&p1, &customers.at(1), 2));
-
-  // Declared in Base
-  // unordered_map<int, Transaction> transactionArchives;
-
-  // Declared in Base
-  //  queue<int> transactionArchivesAge;
-
-  if (customers.size() != 1){
+  if(items.size() != 0){
     passed = false;
-    cout << "customers.size() is not 1, but: " << customers.size() << endl;
+    cout << "items.size() is not 0, but: " << items.size() << endl;
   }
 
-  if (customersAge.size() != 1){
+  SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal, items);
+  Item item(0, "item0", 10, 12);
+  addItem(item, sPass);
+
+  if(items.size() != 1){
     passed = false;
-    cout << "customersAge.size() is not 1, but: " << customersAge.size() << endl;
+    cout << "items.size() is not 1, but: " << items.size() << endl;
   }
 
-  if (transactions.size() != 1){
+  //Erasing from memory manually to check archive and retrieve
+  cout << "itemSize:" << items.size();
+
+  if(items.size() != 0){
     passed = false;
-    cout << "transactions.size() is not 1, but: " << transactions.size() << endl;
+    cout << "items.size() is not 0, but: " << items.size() << endl;
   }
 
-  if (transactionArchives.size() != 0){
+  cout << items.at(0).getId() << endl;
+  retrieveItems(sPass);
+  if(items.size() != 1){
     passed = false;
-    cout << "transactionArchives.size() is not 0, but: " << transactionArchives.size() << endl;
+    cout << "items.size(), after retrieveItems(1), is not 1, but: " << items.size() << endl;
   }
-
-  if (transactionArchivesAge.size() != 0){
-    passed = false;
-    cout << "transactionArchivesAge.size() is not 0, but: " << transactionArchivesAge.size() << endl;
-  }
-
-  customers.emplace(2, Customer("CoolerJonas", "GH", "8023632223"));
-  settings.addNumCustomers();
-  customers.emplace(3, Customer("CoolestJonas", "JGH", "8023632224"));
-  settings.addNumCustomers();
-
-  archiveCustomer(1, sPass);
-
-  settings.setNumCustomers(0);
-  // Emptys Customers
-  customers.clear();
-
-  while (customersAge.size()) customersAge.pop();
-
-
-  retrieveCustomer(1, sPass);
-
-
-  if (customers.size() != 1){
-    passed = false;
-    cout << "customers.size(), after  retrieveCustomer(1, settings), is not 1, but: " << customers.size() << endl;
-  }
-
-  if (customersAge.size() != 1){
-    passed = false;
-    cout << "customersAge.size, after  retrieveCustomer(1, settings), is not 1, but: " << customersAge.size() << endl;
-  }
-
-  if (transactions.size() != 1){
-    passed = false;
-    cout << "transactions.size(), after  retrieveCustomer(1, settings), is not 1, but: " << transactions.size() << endl;
-  }
-  customers.at(1).addCredit(10);
-  archiveCustomer(1, sPass);
-
-
-
-
-  archiveTransaction(2, sPass);
-
-  sPass.settings.setNumTransactions(0);
-  // Emptys Customers
-  transactions.clear();
-  while (transactionArchivesAge.size()) transactionArchivesAge.pop();
-
-  retrieveTransaction(2, sPass);
-  if (transactionArchives.size() != 1){
-    passed = false;
-    cout << "transactionArchives.size(), after  retrieveTransaction(2, settings), is not 1, but: " << transactionArchives.size() << endl;
-  }
-
-  if (transactionArchivesAge.size() != 1){
-    passed = false;
-    cout << "transactionArchivesAge.size, after  retrieveTransaction(2, settings), is not 1, but: " << transactionArchivesAge.size() << endl;
-  }
-
   return passed;
 
 

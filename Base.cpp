@@ -27,7 +27,7 @@ using namespace std;
 //TODO: Move to runProgram.
 PaymentPortal p1;
 
-unordered_map<int, Item> items;
+unordered_map<int, Item> itemsOld;
 
 //TODO: Read these from settings. I have them as global vars right now because directly reading from settings breaks stuff.
 // int numTransactions = 0;
@@ -40,25 +40,44 @@ unordered_map<int, Item> items;
 // unordered_map<int, Customer> customers;
 // queue<int> customersAge;
 
-struct SPass
-{
+struct SPass {
+    // Pending transactions
     unordered_map<int, Transaction>& transactions;
+    // Completed transactions, in memory
     unordered_map<int, Transaction>& transactionArchives;
+    // Ages of the completed transactions, newest to oldest by access
     queue<int>& transactionArchivesAge;
+    // Customers, in memory
     unordered_map<int, Customer>& customers;
+    // Ages of customer in memory
     queue<int>& customersAge;
     Settings& settings;
     PaymentPortal paymentPortal;
+    unordered_map<int, Item>& items;
 
-
-    SPass( unordered_map<int, Transaction>& transactions, unordered_map<int, Transaction>& transactionArchives, queue<int>& transactionArchivesAge, unordered_map<int, Customer>& customers, queue<int>& customersAge, Settings& settings, PaymentPortal& paymentPortal )
-    : transactions(transactions), transactionArchives(transactionArchives), transactionArchivesAge(transactionArchivesAge), customers(customers), customersAge(customersAge), settings(settings), paymentPortal(paymentPortal){}
+    // Used to make passing info to funcs easier
+    SPass(unordered_map<int, Transaction>& transactions,
+        unordered_map<int, Transaction>& transactionArchives,
+        queue<int>& transactionArchivesAge,
+        unordered_map<int, Customer>& customers,
+        queue<int>& customersAge,
+        Settings& settings,
+        PaymentPortal& paymentPortal,
+        unordered_map<int, Item>& items
+        ):
+        transactions(transactions),
+        transactionArchives(transactionArchives),
+        transactionArchivesAge(transactionArchivesAge),
+        customers(customers), customersAge(customersAge),
+        settings(settings),
+        paymentPortal(paymentPortal),
+        items(items){}
 };
-
 template <typename dataType>
 dataType userInput(string messege);
 
 void TransactionTester1();
+
 
 bool createTransaction(int customerIndex, SPass& sPass);
 bool createTransaction(SPass& sPass);
@@ -137,7 +156,7 @@ bool removeCustomer(int index, SPass& sPass);
 
 void numCustomerLimit(bool futureCheck, SPass& sPass);
 
-Item* findItem(int id);
+Item* findItem(int id, SPass& sPass);
 
 /*
   Creates a customer from user input
@@ -151,11 +170,12 @@ Customer createCustomerInput();
 */
 bool createCustomer(Customer& customer, SPass& sPass);
 
-//TODO: createTransaction()
+bool retrieveItems(SPass& sPass);
 
+bool archiveItem(int index, SPass& sPass);
 
+bool addItem(Item& item, SPass& sPass);
 
-//TODO: A lot of the code in here should be separate functions
 void runProgram(){
     unordered_map<int, Transaction> transactions;
     unordered_map<int, Transaction> transactionArchives;
@@ -165,7 +185,8 @@ void runProgram(){
     queue<int> customersAge;
     Settings settings("data/settings.json");
     PaymentPortal paymentPortal;
-    SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal);
+    unordered_map<int, Item> items;
+    SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal,items);
 
     int cId = userInput<int>("Please enter your customer ID\n(type your customer ID or 0 for no account)");
 
@@ -237,6 +258,7 @@ bool checkTransaction(int index, SPass& sPass){
 bool archiveTransaction(int index, SPass& sPass) {
     if (!checkTransaction(index, sPass)) return false;
 
+    // Completes the transaction and moves the customer's points and ids
     sPass.transactions.at(index).completeTransaction();
     if (sPass.transactions.at(index).getCustomer() != nullptr) {
         sPass.transactions.at(index).getCustomer()->addTransaction(index);
@@ -264,6 +286,7 @@ bool archiveTransaction(int index, SPass& sPass) {
     Transaction &trans = sPass.transactions.at(index); //*
     json t = trans; //*
 
+    // Used to overwrite an existing transaction opposed to adding a new one.
     bool replaced = false;
     for (auto& entry : data) {
         if (t.contains("id") && t["id"] == index) {
@@ -282,6 +305,7 @@ bool archiveTransaction(int index, SPass& sPass) {
     out << data.dump(4); //*
     out.close(); //*
 
+    // Moves the transaction to the correct map.
     sPass.transactionArchives.emplace(index, move(sPass.transactions.at(index)));
     sPass.transactions.erase(index);
     sPass.transactionArchivesAge.push(index);
@@ -322,6 +346,7 @@ bool retrieveTransaction(int index, SPass& sPass){
             int customerId = t.value("customerId", -1);  //*
             int totalCost   = t.value("totalCost", 0.0);  //*
 
+            // Creates a transaction to fill in, if no customer is found no customer is set,
             Transaction transactionAdd(&sPass.paymentPortal, (retrieveCustomer(customerId, sPass)) ? &sPass.customers.at(customerId) : nullptr, totalCost);
 
             vector<ItemIn> items;
@@ -340,8 +365,8 @@ bool retrieveTransaction(int index, SPass& sPass){
 
                         ItemIn itemIn(nullptr);
 
-                        if (auto itemObj = findItem(itemId)) {
-                            itemIn.item = findItem(itemId);
+                        if (auto itemObj = findItem(itemId, sPass)) {
+                            itemIn.item = findItem(itemId, sPass);
                         }
                         itemIn.purchaseQuantity = itemPurchaseQuantity;
                         itemIn.purchasePrice = itemPurchasePrice;
@@ -511,6 +536,7 @@ bool archiveCustomer(int index, SPass& sPass){
 }
 
 //check the transaction one
+// TODO, This function needs a lot of work and I'm not sure if it is necessary. Removing a customer will require changing how the customers are stored in memory because the ages are stored in queues, which only really has pop. I think something with iterators might work, we will see.
 bool removeCustomer(int index, SPass& sPass)
 {
     if (index < 0 || index > sPass.settings.getNumCustomers()) return false;
@@ -560,6 +586,7 @@ void numCustomerLimit(bool futureCheck, SPass& sPass){
         cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
     }
 
+    // Removes the oldest one if too many are in memory.
     if (sPass.customers.size() > sPass.settings.getMaxCustomers() - futureCheck && !sPass.customersAge.empty()){
         int removeIndex = sPass.customersAge.front();
         sPass.customersAge.pop();
@@ -567,9 +594,9 @@ void numCustomerLimit(bool futureCheck, SPass& sPass){
     }
 }
 
-Item* findItem(int id){
-    if (!items.count(id)) return nullptr;
-    return &items.at(id);
+Item* findItem(int id, SPass& sPass){
+    if (!sPass.items.count(id)) return nullptr;
+    return &sPass.items.at(id);
 }
 
 
@@ -652,14 +679,14 @@ Customer createCustomerInput(){
 // End of createCustomer
 }
 
-bool CreateCustomer(Customer& customer, SPass& sPass){
+bool createCustomer(Customer& customer, SPass& sPass){
+    sPass.settings.addNumCustomers();
     int index = sPass.settings.getNumCustomers();
     sPass.customers.emplace(index, customer);
     sPass.customersAge.emplace(index);
     archiveCustomer(index, sPass);
-    sPass.settings.addNumCustomers();
     numCustomerLimit(true, sPass);
-
+    return true;
 }
 
 bool createTransaction(int customerIndex, SPass& sPass) {
@@ -673,8 +700,8 @@ bool createTransaction(int customerIndex, SPass& sPass) {
 }
 
 bool createTransaction(SPass& sPass) {
-    sPass.transactions.emplace(sPass.settings.getNumCustomers(), Transaction(&sPass.paymentPortal, nullptr, sPass.settings.getNumCustomers()));
     sPass.settings.addNumCustomers();
+    sPass.transactions.emplace(sPass.settings.getNumCustomers(), Transaction(&sPass.paymentPortal, nullptr, sPass.settings.getNumCustomers()));
     return true;
 }
 // Allows for multiple input types using one function.
@@ -717,36 +744,140 @@ dataType userInput(string messege){
 // End of userInput
 }
 
-// bool retrieveItems(SPass& sPass){
-//
-//     if (!checkCustomer(index, sPass)) return false;
-//
-//     ifstream f("data/items.json");
-//     if (!f) {
-//         std::cerr << "Could not open file";
-//         return false;
-//     }
-//
-//     nlohmann::json data;
-//     f >> data;
-//     f.close();
-//
-//     if (!data.is_array()) {
-//         std::cerr << "JSON is not an array";
-//         return false;
-//     }
-//     vector<int> transactionsAdd;
-//
-//     for (const auto& t : data){
-//         if (t.contains("id") && t["id"] == index){
-//             int id = t.value("id", -1);
-//             string name = t.value("name", "NULL");
-//             int name = t.value("price", 0);
-//             int quantity = t.value("quantity", 0);
-//
-//             transactions.emplace(id, Item(id, name, price,quantity));
-//             }
-//         }
-//     }
-//     return true;
-// }
+bool retrieveItems(SPass& sPass) {
+    ifstream f("data/items.json");
+    if (!f) {
+        std::cerr << "Could not open file";
+        return false;
+    }
+
+    nlohmann::json data;
+    f >> data;
+    f.close();
+
+    if (!data.is_array()) {
+        std::cerr << "JSON is not an array";
+        return false;
+    }
+    vector<int> transactionsAdd;
+
+    for (const auto& t : data) {
+        int id = t.value("id", -1);
+        string name = t.value("name", "NULL");
+        int price = t.value("price", 0);
+        int quantity = t.value("quantity", 0);
+        }
+    return true;
+}
+
+bool archiveItem(int index, SPass& sPass){
+    if (!findItem(index, sPass)) return false;
+
+    using nlohmann::json; //*
+
+    json data;
+    std::ifstream in("data/customers.json"); //*
+    if (in) { //*
+        if (in.peek() == std::ifstream::traits_type::eof()) { //*
+            data = json::array(); // empty file //*
+        } else {
+            in >> data;           // parse existing JSON //*
+        } //*
+    } //*
+    in.close(); //*
+
+    if (!data.is_array()) { //*
+        data = json::array(); //*
+    } //*
+
+
+    // Get transaction from map
+    Item &item = sPass.items.at(index); //*
+
+    // Convert to JSON
+    json c = item; //*
+
+    // Append
+
+    // Rewrite file
+    std::ofstream out("data/items.json"); //*
+
+    bool replaced = false;
+    for (auto& entry : data) {
+        if (c.contains("id") && c["id"] == index) {
+            entry = c;
+            replaced = true;
+            break;
+        }
+    }
+
+    if (!replaced) {
+        data.push_back(c); //*
+    }
+
+    out << data.dump(4); //*
+
+    sPass.settings.addNumCustomers();
+
+    return true;
+}
+
+bool addItem(Item& item, SPass& sPass) {
+    sPass.settings.addNumItems();
+    int index = sPass.settings.getNumItems();
+    sPass.items.emplace(index, item);
+    archiveItem(index, sPass);
+    return true;
+}
+
+bool removeItem(int index, SPass& sPass) {
+    if (!findItem(index, sPass)) return false;
+    sPass.items.erase(index);
+    using nlohmann::json; //*
+
+    json data;
+    std::ifstream in("data/items.json"); //*
+    if (in) { //*
+        if (in.peek() == std::ifstream::traits_type::eof()) { //*
+            data = json::array(); // empty file //*
+        } else {
+            in >> data;           // parse existing JSON //*
+        } //*
+    } //*
+    in.close(); //*
+
+    if (!data.is_array()) { //*
+        data = json::array(); //*
+    } //*
+
+
+    // Get transaction from map
+    Item &item = sPass.items.at(index); //*
+
+    // Convert to JSON
+    json c = item; //*
+
+    // Append
+
+    // Rewrite file
+    std::ofstream out("data/items.json"); //*
+
+    bool removed = false;
+    for (auto it = data.begin(); it != data.end(); ++it) {
+        if (it->contains("id") && (*it)["id"] == index) {
+            data.erase(it);
+            removed = true;
+            break;
+        }
+    }
+
+
+    if (!removed) {
+       cerr << "Could not remove JSON item at: " << index << endl;
+    }
+
+    out << data.dump(4); //*
+
+    return true;
+}
+
