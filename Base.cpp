@@ -168,14 +168,15 @@ Customer createCustomerInput();
 
   Output: whether the customer could create
 */
+bool createCustomer(int index, Customer& customer, SPass& sPass);
 bool createCustomer(Customer& customer, SPass& sPass);
 
 bool retrieveItems(SPass& sPass);
 
 bool archiveItem(int index, SPass& sPass);
 
+bool addItem(int index, Item& item, SPass& sPass);
 bool addItem(Item& item, SPass& sPass);
-
 void runProgram(){
     unordered_map<int, Transaction> transactions;
     unordered_map<int, Transaction> transactionArchives;
@@ -202,17 +203,6 @@ void runProgram(){
         cout << "New Customer" << endl;
     }
 
-}
-void TransactionTester1(){
-    int numtransactions = 0;
-    PaymentPortal p1;
-    Item i1(1234, "Carrot", 1, 10);
-    Customer jonas(0, "Jonas", "H", "8023632222");
-    Transaction t1(&p1, &jonas, numtransactions);
-    t1.addItem(i1);
-    cout << i1 << endl;
-
-    cout << i1 << endl;
 }
 
 
@@ -256,13 +246,24 @@ bool checkTransaction(int index, SPass& sPass){
 
 // I copied some of this from https://json.nlohmann.me and https://www.youtube.com/watch?v=Sa8bdVogGIo, copied lines are marked with *
 bool archiveTransaction(int index, SPass& sPass) {
-    if (!checkTransaction(index, sPass)) return false;
+    if (!sPass.transactions.count(index)) return false;
 
     // Completes the transaction and moves the customer's points and ids
     sPass.transactions.at(index).completeTransaction();
-    if (sPass.transactions.at(index).getCustomer() != nullptr) {
-        sPass.transactions.at(index).getCustomer()->addTransaction(index);
-        sPass.transactions.at(index).getCustomer()->setpendingTransaction(nullptr);
+
+    int customerIndex = sPass.transactions.at(index).getCustomerId();
+    if (customerIndex != -2) {
+        if (sPass.customers.count(customerIndex)) {
+            sPass.customers.at(customerIndex).setpendingTransaction(nullptr);
+            sPass.customers.at(customerIndex).addTransaction(index);
+        } else if (checkCustomer(customerIndex, sPass)) {
+            retrieveCustomer(customerIndex, sPass);
+            sPass.customers.at(customerIndex).setpendingTransaction(nullptr);
+            sPass.customers.at(customerIndex).addTransaction(index);
+        } else {
+            customerIndex = -2;
+        }
+
     }
 
     using nlohmann::json; //*
@@ -344,10 +345,10 @@ bool retrieveTransaction(int index, SPass& sPass){
         if (t.contains("id") && t["id"] == index){
 
             int customerId = t.value("customerId", -1);  //*
-            int totalCost   = t.value("totalCost", 0.0);  //*
+            customerId = checkCustomer(customerId, sPass) ? customerId : -2;
+            int totalCost = t.value("totalCost", 0.0);  //*
 
-            // Creates a transaction to fill in, if no customer is found no customer is set,
-            Transaction transactionAdd(&sPass.paymentPortal, (retrieveCustomer(customerId, sPass)) ? &sPass.customers.at(customerId) : nullptr, totalCost);
+            Transaction transactionAdd(&sPass.paymentPortal, customerId, totalCost);
 
             vector<ItemIn> items;
             if (t.contains("items") && t["items"].is_array()) {
@@ -679,9 +680,16 @@ Customer createCustomerInput(){
 // End of createCustomer
 }
 
-bool createCustomer(Customer& customer, SPass& sPass){
-    sPass.settings.addNumCustomers();
-    int index = sPass.settings.getNumCustomers();
+bool createCustomer(int index, Customer& customer, SPass& sPass){
+    if (index == -1) {
+        sPass.settings.addNumCustomers();
+        index = sPass.settings.getNumCustomers();
+    } else if (index < -1) {
+        return false;
+    } else if (checkCustomer(index, sPass)) {
+        return false;
+    }
+
     sPass.customers.emplace(index, customer);
     sPass.customersAge.emplace(index);
     archiveCustomer(index, sPass);
@@ -689,13 +697,31 @@ bool createCustomer(Customer& customer, SPass& sPass){
     return true;
 }
 
-bool createTransaction(int customerIndex, SPass& sPass) {
+bool createCustomer(Customer& customer, SPass& sPass) {
+    return createCustomer(-1, customer, sPass);
+}
 
-    if (!checkCustomer(customerIndex, sPass)) {
+
+bool createTransaction(int index, int customerIndex, SPass& sPass) {
+    if (index == -1) {
+        sPass.settings.addNumCustomers();
+        index = sPass.settings.getNumCustomers();
+    } else if (index < -1) {
+        return false;
+    } else if (checkTransaction(index, sPass)) {
         return false;
     }
-    sPass.transactions.emplace(sPass.settings.getNumCustomers(), Transaction(&sPass.paymentPortal, &sPass.customers.at(customerIndex), sPass.settings.getNumCustomers()));
-    sPass.settings.addNumCustomers();
+
+    if (customerIndex == -1) {
+        sPass.settings.addNumCustomers();
+        customerIndex = sPass.settings.getNumCustomers();
+    } else if (customerIndex < -1) {
+        return false;
+    } else if (!checkCustomer(customerIndex, sPass)) {
+        return false;
+    }
+
+    sPass.transactions.emplace(index, Transaction(&sPass.paymentPortal, &sPass.customers.at(customerIndex), index));
     return true;
 }
 
@@ -822,12 +848,23 @@ bool archiveItem(int index, SPass& sPass){
     return true;
 }
 
-bool addItem(Item& item, SPass& sPass) {
-    sPass.settings.addNumItems();
-    int index = sPass.settings.getNumItems();
+bool addItem(int index, Item& item, SPass& sPass) {
+    if (index == -1) {
+        sPass.settings.addNumItems();
+        index = sPass.settings.getNumItems();
+    } else if (index < -1) {
+        return false;
+    } else if (findItem(index, sPass)){
+        return false;
+    }
+
     sPass.items.emplace(index, item);
     archiveItem(index, sPass);
     return true;
+}
+
+bool addItem(Item& item, SPass& sPass) {
+    return addItem(-1, item, sPass);
 }
 
 bool removeItem(int index, SPass& sPass) {

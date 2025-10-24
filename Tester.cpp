@@ -254,7 +254,7 @@ bool transactionTest(){
   Customer customer(1, "Jonas", "H", "8023632222");
   Item item(0, "name", 10, 10);
   ItemIn itemIn(&item);
-  Transaction transaction(&paymentPortal, &customer, 2);
+  Transaction transaction(&paymentPortal, 1, 2);
 
   if(transaction.getId() != 2){
     passed = false;
@@ -265,9 +265,9 @@ bool transactionTest(){
     cout << "Transaction isCompleted() is true" << endl;
   }
 
-  if(transaction.getCustomer()->getFirstName() != customer.getFirstName()){
+  if(transaction.getCustomerId() != 1){
     passed = false;
-    cout << "transaction.getCustomer()->getFirstName() is not Jonas, but: " << transaction.getCustomer()->getFirstName() << endl;
+    cout << "transaction.getCustomerId() != 1, but: " << transaction.getCustomerId() << endl;
   }
 
   if(transaction.getTotalCost() != 0){

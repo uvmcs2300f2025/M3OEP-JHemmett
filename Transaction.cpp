@@ -11,8 +11,11 @@ using namespace std;
 /*
   Stores transaction information.
  */
-Transaction::Transaction(PaymentPortal* portal, Customer* customer, int id) : completed(false), totalCost(0), portal(portal), customer(customer), id(id) {}
-Transaction::Transaction(PaymentPortal* portal, Customer* customer, int id, vector<ItemIn>& items, int totalCost) : completed(true), totalCost(totalCost), portal(portal), customer(customer), id(id) {}
+Transaction::Transaction(PaymentPortal* portal, int customerId, int id) : completed(false), totalCost(0), portal(portal), customerId(customerId), id(id) {}
+Transaction::Transaction(PaymentPortal* portal, int id) : completed(false), totalCost(0), portal(portal), customerId(-2), id(id) {}
+
+// Transaction::Transaction(PaymentPortal* portal, int customerId, int id, vector<ItemIn>& items, int totalCost) : completed(true), totalCost(totalCost), portal(portal), customerId(customerId), id(id) {}
+// Transaction::Transaction(PaymentPortal* portal, int id, vector<ItemIn>& items, int totalCost) : completed(true), totalCost(totalCost), portal(portal), customerId(-2), id(id) {}
 
 // If a transaction is canceled, items are restocked
 Transaction::~Transaction() {
@@ -103,7 +106,7 @@ bool Transaction::setItems(vector<ItemIn>& items) {
   return true;
 }
 
-Customer* Transaction::getCustomer() const {return customer;}
+int Transaction::getCustomerId() const {return customerId;}
 
  bool Transaction::isCompleted()  const{return completed;}
 
@@ -124,7 +127,7 @@ int Transaction::getId() const {return id;}
 std::ostream& operator<<(std::ostream& os, const Transaction& obj) {
   if (obj.completed) {
     os << "- Shopping Receipt -" << endl;
-    os << "Customer: " << *obj.customer << endl;
+    os << "CustomerId: " << obj.customerId << endl;
     for (ItemIn item : obj.items){
       os << item.item->getName() << "(" << item.item->getId() << ") " << item.item->getPrice() << "x $" << item.purchasePrice << endl;
     }
@@ -133,7 +136,7 @@ std::ostream& operator<<(std::ostream& os, const Transaction& obj) {
   }
 
   os << "- Shopping Cart -" << endl;
-  os << "Customer: " << *obj.customer << endl;
+  os << "CustomerId: " << obj.customerId << endl;
 
   for (ItemIn item : obj.items){
     os << item.item->getName() << "(" << item.item->getId() << ") " << item.purchaseQuantity << "x $" << item.purchasePrice << endl;
@@ -150,7 +153,7 @@ void to_json(nlohmann::json& j, const Transaction& t){
       {"id", t.getId()},
     {"items", nlohmann::json::array()},
 {"totalCost", t.getTotalCost()},
-{"customerId", t.getCustomer()->getCustomerId()},
+{"customerId", t.getCustomerId()},
   };
 
   for (const ItemIn item : t.getTransaction())

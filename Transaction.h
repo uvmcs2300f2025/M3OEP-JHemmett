@@ -9,7 +9,6 @@
 
 
 
-#include "customer.h"
 #ifndef TRANSACTION_H
 #define TRANSACTION_H
 
@@ -20,13 +19,16 @@ private:
     int totalCost;
     bool completed;
     int id;
-    Customer* customer;
+    int customerId;
     PaymentPortal* portal;
 
 
 public:
-  Transaction(PaymentPortal* portal, Customer* customer, int id);
-  Transaction(PaymentPortal* portal, Customer* customer, int id, vector<ItemIn>& items, int totalCost);
+  Transaction(PaymentPortal* portal, int customerId, int id);
+  Transaction(PaymentPortal* portal, int id);
+
+  // Transaction(PaymentPortal* portal, int customerId, int id, vector<ItemIn>& items, int totalCost);
+  // Transaction(PaymentPortal* portal, int id, vector<ItemIn>& items, int totalCost);
 
   // If an uncompleted transaction is deleted, items are restocked
   ~Transaction();
@@ -41,7 +43,7 @@ public:
   bool removeItem(Item& item);
   bool setItems(vector<ItemIn>& items);
 
-  Customer* getCustomer() const;
+  int getCustomerId() const;
   bool isCompleted() const;
   void completeTransaction();
 
