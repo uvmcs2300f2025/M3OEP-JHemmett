@@ -7,24 +7,23 @@
 #include <string>
 #include <vector>
 
-
+//TODO Make customer index start at -2, set it when added to databasek
 // https://www.geeksforgeeks.org/cpp/what-are-forward-declarations-in-c/
 
 class Transaction;
 
 class Customer {
 private:
-    int customerId;
+    int customerId = -2;
     std::string firstName;
     std::string lastName;
-    int credit;
+    int credit = 0;
     std::string phoneNumber;
     // Smart pointers were a headache
     Transaction* pendingTransaction = nullptr;
     std::vector<int> transactions;
 
 public:
-    Customer(int id, std::string firstName, std::string lastName, std::string phoneNumber);  // constructor declaration
     Customer(std::string firstName, std::string lastName, std::string phoneNumber);  // constructor declaration
     Customer(const Customer& customer);
 
@@ -54,6 +53,7 @@ public:
     void addTransaction(int transaction);
     std::vector<int> getTransactions() const;
 
+    bool setId(int id);
     friend std::ostream& operator<<(std::ostream& os, const Customer& obj);
 
 };

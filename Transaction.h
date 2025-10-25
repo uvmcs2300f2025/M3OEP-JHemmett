@@ -18,14 +18,14 @@ private:
     vector<ItemIn> items;
     int totalCost;
     bool completed;
-    int id;
+    int id = -2'
     int customerId;
     PaymentPortal* portal;
 
 
 public:
-  Transaction(PaymentPortal* portal, int customerId, int id);
-  Transaction(PaymentPortal* portal, int id);
+  Transaction(PaymentPortal* portal, int customerId);
+  Transaction(PaymentPortal* portal);
 
   // Transaction(PaymentPortal* portal, int customerId, int id, vector<ItemIn>& items, int totalCost);
   // Transaction(PaymentPortal* portal, int id, vector<ItemIn>& items, int totalCost);
@@ -53,6 +53,8 @@ public:
 
   string toJson() const;
   friend std::ostream& operator<<(std::ostream& os, const Transaction& obj);
+
+  bool setId(int id);
 
 };
 void to_json(nlohmann::json& j, const Transaction& t);

@@ -11,8 +11,8 @@ using namespace std;
 /*
   Stores transaction information.
  */
-Transaction::Transaction(PaymentPortal* portal, int customerId, int id) : completed(false), totalCost(0), portal(portal), customerId(customerId), id(id) {}
-Transaction::Transaction(PaymentPortal* portal, int id) : completed(false), totalCost(0), portal(portal), customerId(-2), id(id) {}
+Transaction::Transaction(PaymentPortal* portal, int customerId) : completed(false), totalCost(0), portal(portal), customerId(customerId), id(id) {}
+Transaction::Transaction(PaymentPortal* portal) : completed(false), totalCost(0), portal(portal), customerId(-2), id(id) {}
 
 // Transaction::Transaction(PaymentPortal* portal, int customerId, int id, vector<ItemIn>& items, int totalCost) : completed(true), totalCost(totalCost), portal(portal), customerId(customerId), id(id) {}
 // Transaction::Transaction(PaymentPortal* portal, int id, vector<ItemIn>& items, int totalCost) : completed(true), totalCost(totalCost), portal(portal), customerId(-2), id(id) {}
@@ -169,4 +169,10 @@ void to_json(nlohmann::json& j, const Transaction& t){
 
 
   }
+}
+
+bool Transaction::setId(int id) {
+  if (id == -2) return false;
+  this->id = id;
+  return true;
 }

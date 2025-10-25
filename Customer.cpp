@@ -5,11 +5,8 @@
 
 using namespace std;
 //TODO: Require ID
-Customer::Customer(string firstName, string lastName, string phoneNumber)
-    : firstName(firstName), lastName(lastName), phoneNumber(phoneNumber), credit(0){}
 
-Customer::Customer(int customerId, string firstName, string lastName, string phoneNumber)
-    : customerId(customerId), firstName(firstName), lastName(lastName), phoneNumber(phoneNumber), credit(0){}
+Customer::Customer(string firstName, string lastName, string phoneNumber): firstName(firstName), lastName(lastName), phoneNumber(phoneNumber){}
 
 Customer::Customer(const Customer& customer):
     firstName(customer.firstName),
@@ -90,12 +87,12 @@ std::ostream& operator<<(std::ostream& os, const Customer& obj) {
 void to_json(nlohmann::json& j, const Customer& t){
     j = nlohmann::json{
         // https://json.nlohmann.me/api/basic_json/array/
-          {"id", t.getCustomerId()},
+    {"id", t.getCustomerId()},
     {"firstName", t.getFirstName()},
     {"lastName", t.getLastName()},
     {"phoneNumber", t.getPhoneNumber()},
-        {"credit", t.getCredit()},
-        {"transactions", nlohmann::json::array()},
+    {"credit", t.getCredit()},
+    {"transactions", nlohmann::json::array()},
 
       };
 
@@ -103,6 +100,12 @@ void to_json(nlohmann::json& j, const Customer& t){
         j["transactions"].push_back(i);
     }
 
+}
+
+bool Customer::setId(int customerId) {
+    if (customerId == -2) return false;
+    this->customerId = customerId;
+    return true;
 }
 
 // {"items", nlohmann::json::array()},
