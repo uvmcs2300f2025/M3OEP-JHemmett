@@ -5,16 +5,20 @@
 
 using namespace std;
 
-Item::Item(int id) : id(id), name(""), price(0), quantity(0), holdQuantity(0) {}
 Item::Item(int id, string name) : id(id), name(name), price(0), quantity(0),holdQuantity(0) {}
 Item::Item(int id, string name, int price) : id(id), name(name), price(price), quantity(0), holdQuantity(0) {}
 Item::Item(int id, string name, int price, int quantity) : id(id), name(name), price(price), quantity(quantity), holdQuantity(0) {}
+Item::Item(string name, int price, int quantity) : name(name), price(price), quantity(quantity), holdQuantity(0) {}
 
 string Item::getName() const {return name;}
 void Item::setName(string name) {this->name = name;}
 
 int Item::getId() const {return id;}
-void Item::setId(int id) {this->id = id;}
+void Item::setId(int id) {
+  if (this->id == -2) {
+    this->id =id;
+  }
+}
 
 int Item::getPrice() const {return price;}
 void Item::setPrice(int price) {this->price = price;}

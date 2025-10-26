@@ -78,9 +78,11 @@ dataType userInput(string messege);
 
 void TransactionTester1();
 
+bool createTransaction(int index, Transaction& transaction, SPass& sPass);
+bool createTransaction(Transaction& transaction, SPass& sPass);
 
-bool createTransaction(int customerIndex, SPass& sPass);
-bool createTransaction(SPass& sPass);
+
+bool cancelTransaction(int index, SPass& sPass);
 
 void numTransactionLimit(bool futureCheck, SPass& sPass);
 /*
@@ -227,8 +229,13 @@ bool checkTransaction(int index, SPass& sPass){
 
     // Opens JSON file and reads it in.
     nlohmann::json data;
-    f >> data;
+    if (f.peek() == std::ifstream::traits_type::eof()) {
+        data = nlohmann::json::array();
+    } else {
+        f >> data;
+    }
     f.close();
+
 
    if (!data.is_array()) {
         std::cerr << "JSON is not an array";
@@ -252,20 +259,19 @@ bool archiveTransaction(int index, SPass& sPass) {
     sPass.transactions.at(index).completeTransaction();
 
     int customerIndex = sPass.transactions.at(index).getCustomerId();
-    if (customerIndex != -2) {
-        if (sPass.customers.count(customerIndex)) {
-            sPass.customers.at(customerIndex).setpendingTransaction(nullptr);
-            sPass.customers.at(customerIndex).addTransaction(index);
-        } else if (checkCustomer(customerIndex, sPass)) {
-            retrieveCustomer(customerIndex, sPass);
-            sPass.customers.at(customerIndex).setpendingTransaction(nullptr);
-            sPass.customers.at(customerIndex).addTransaction(index);
-        } else {
-            customerIndex = -2;
+    if (customerIndex != -2 && checkCustomer(customerIndex, sPass)) {
+        if (!sPass.customers.count(customerIndex)) {
+            archiveCustomer(customerIndex, sPass);
         }
+        sPass.customers.at(customerIndex).setpendingTransaction(nullptr);
+        sPass.customers.at(customerIndex).addTransaction(index);
+        archiveCustomer(customerIndex, sPass);
 
     }
 
+    for (ItemIn i : sPass.transactions.at(index).getItems()) {
+
+    }
     using nlohmann::json; //*
 
 
@@ -332,7 +338,12 @@ bool retrieveTransaction(int index, SPass& sPass){
     }
 
     nlohmann::json data;
-    f >> data;
+
+    if (f.peek() == std::ifstream::traits_type::eof()) {
+        data = nlohmann::json::array();
+    } else {
+        f >> data;
+    }
     f.close();
 
     if (!data.is_array()) {
@@ -393,9 +404,6 @@ bool retrieveTransaction(int index, SPass& sPass){
 
 // TODO Match customer
 void numTransactionLimit(bool futureCheck, SPass& sPass){
-    cout << "called" << endl;
-    cout << "sPass.transactionArchives.size()" << sPass.transactionArchives.size() << endl;
-    cout << "sPass.transactionArchivesAge.size()" << sPass.transactionArchivesAge.size() << endl;
     if (sPass.transactionArchives.size() != sPass.transactionArchivesAge.size())
     {
         cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
@@ -418,7 +426,11 @@ bool checkCustomer(int index, SPass& sPass){
     }
 
     nlohmann::json data;
-    f >> data;
+    if (f.peek() == std::ifstream::traits_type::eof()) {
+        data = nlohmann::json::array();
+    } else {
+        f >> data;
+    }
     f.close();
 
     if (!data.is_array()) {
@@ -446,7 +458,11 @@ bool retrieveCustomer(int index, SPass& sPass){
     }
 
     nlohmann::json data;
-    f >> data;
+    if (f.peek() == std::ifstream::traits_type::eof()) {
+        data = nlohmann::json::array();
+    } else {
+        f >> data;
+    }
     f.close();
 
     if (!data.is_array()) {
@@ -456,8 +472,8 @@ bool retrieveCustomer(int index, SPass& sPass){
     vector<int> transactionsAdd;
 
     for (const auto& t : data){
-        if (t.contains("id") && t["id"] == index){
-            int id = t.value("id", -1);
+        if (t.contains("customerId") && t["customerId"] == index){
+            int customerId = t.value("id", -1);
             string firstName = t.value("firstName", "NULL");
             string lastName = t.value("lastName", "NULL");
             string phoneNumber = t.value("phoneNumber", "0000000000");
@@ -469,7 +485,7 @@ bool retrieveCustomer(int index, SPass& sPass){
 
 
             //TODO, add limit check
-            sPass.customers.emplace(index, Customer(id, firstName, lastName, phoneNumber));
+            sPass.customers.emplace(index, Customer(firstName, lastName, phoneNumber, customerId));
             sPass.customersAge.push(index);
             if (credit > 0) sPass.customers.at(index).setCredit(credit);
             if (transactionsAdd.size()) sPass.customers.at(index).setTransactions(transactionsAdd);
@@ -602,92 +618,97 @@ Item* findItem(int id, SPass& sPass){
 
 
 
-Customer createCustomerInput(){
-    string firstName, lastName, phoneNumber;
+// Customer createCustomerInput(){
+//     string firstName, lastName, phoneNumber;
+//
+//     while (true)
+//     {
+//         firstName = userInput<string>("Please enter your first name\n(E.G. Jonas):");
+//
+//         if (!firstName.empty()) break;
+//
+//         cout << "Invalid input!getter" << endl;
+//     }
+//
+//     for (int i = 0; i < firstName.length(); i++)
+//     {
+//         firstName[i] = (!i) ? toupper(firstName[i]) : tolower(firstName[i]);
+//     }
+//
+//     while (true)
+//     {
+//         lastName = userInput<string>("Please enter your last name\n(E.G. Hemmett):");
+//
+//         lastName.erase(std::remove(lastName.begin(), lastName.end(), ' '), lastName.end());
+//
+//         if (!lastName.empty()) break;
+//
+//         cout << "Invalid input!getter" << endl;
+//     }
+//
+//     // I added this to account for last names like McNee where 2 characters are capitalized.
+//     if (lastName.length() >= 2 && tolower(lastName[0]) == 'm' && tolower(lastName[1]) == 'c')
+//     {
+//         for (int i = 0; i < lastName.length(); i++)
+//         {
+//             lastName[i] = (!i || i == 2 ) ? toupper(lastName[i]) : tolower(lastName[i]);
+//         }
+//
+//     } else if (lastName.length() >= 3 && tolower(lastName[0]) == 'v' && tolower(lastName[1]) == 'o'  && tolower(lastName[1]) == 'n'){
+//         for (int i = 0; i < lastName.length(); i++)
+//         {
+//             lastName[i] = (!i || i == 3) ? toupper(lastName[i]) : tolower(lastName[i]);
+//         }
+//     }
+//
+//
+//     else {
+//         for (int i = 0; i < lastName.length(); i++)
+//         {
+//             lastName[i] = (!i) ? toupper(lastName[i]) : tolower(lastName[i]);
+//         }
+//
+//     }
+//
+//
+//     while (true)
+//     {
+//         int allChar = true;
+//         phoneNumber = userInput<string>("Please enter your phone number\n(Enter as 10 or 11 digits):");
+//
+//         for (char c : phoneNumber)
+//         {
+//             if (!isdigit(c)) allChar = false;
+//         }
+//
+//         if (allChar)
+//         {
+//             if (phoneNumber.length() == 10) phoneNumber.insert(phoneNumber.begin(), '1');
+//             if (phoneNumber.length() == 11)  break;
+//         }
+//
+//         cout << "Phone: " << phoneNumber << endl;
+//         cout << "Invalid input!getter" << endl;
+//     }
+//
+//     //TODO: Require ID
+//     return Customer(0, firstName, lastName, phoneNumber);
+// // End of createCustomer
+// }
 
-    while (true)
-    {
-        firstName = userInput<string>("Please enter your first name\n(E.G. Jonas):");
-
-        if (!firstName.empty()) break;
-
-        cout << "Invalid input!getter" << endl;
-    }
-
-    for (int i = 0; i < firstName.length(); i++)
-    {
-        firstName[i] = (!i) ? toupper(firstName[i]) : tolower(firstName[i]);
-    }
-
-    while (true)
-    {
-        lastName = userInput<string>("Please enter your last name\n(E.G. Hemmett):");
-
-        lastName.erase(std::remove(lastName.begin(), lastName.end(), ' '), lastName.end());
-
-        if (!lastName.empty()) break;
-
-        cout << "Invalid input!getter" << endl;
-    }
-
-    // I added this to account for last names like McNee where 2 characters are capitalized.
-    if (lastName.length() >= 2 && tolower(lastName[0]) == 'm' && tolower(lastName[1]) == 'c')
-    {
-        for (int i = 0; i < lastName.length(); i++)
-        {
-            lastName[i] = (!i || i == 2 ) ? toupper(lastName[i]) : tolower(lastName[i]);
-        }
-
-    } else if (lastName.length() >= 3 && tolower(lastName[0]) == 'v' && tolower(lastName[1]) == 'o'  && tolower(lastName[1]) == 'n'){
-        for (int i = 0; i < lastName.length(); i++)
-        {
-            lastName[i] = (!i || i == 3) ? toupper(lastName[i]) : tolower(lastName[i]);
-        }
-    }
-
-
-    else {
-        for (int i = 0; i < lastName.length(); i++)
-        {
-            lastName[i] = (!i) ? toupper(lastName[i]) : tolower(lastName[i]);
-        }
-
-    }
-
-
-    while (true)
-    {
-        int allChar = true;
-        phoneNumber = userInput<string>("Please enter your phone number\n(Enter as 10 or 11 digits):");
-
-        for (char c : phoneNumber)
-        {
-            if (!isdigit(c)) allChar = false;
-        }
-
-        if (allChar)
-        {
-            if (phoneNumber.length() == 10) phoneNumber.insert(phoneNumber.begin(), '1');
-            if (phoneNumber.length() == 11)  break;
-        }
-
-        cout << "Phone: " << phoneNumber << endl;
-        cout << "Invalid input!getter" << endl;
-    }
-
-    //TODO: Require ID
-    return Customer(0, firstName, lastName, phoneNumber);
-// End of createCustomer
-}
-
-bool createCustomer(int index, Customer& customer, SPass& sPass){
+bool createCustomer(int index, Customer& customer, SPass& sPass) {
     if (index == -1) {
         sPass.settings.addNumCustomers();
         index = sPass.settings.getNumCustomers();
     } else if (index < -1) {
         return false;
-    } else if (checkCustomer(index, sPass)) {
+    }
+    if (checkCustomer(index, sPass)) {
         return false;
+    }
+
+    if (customer.getCustomerId()== -2) {
+        customer.setCustomerId(index);
     }
 
     sPass.customers.emplace(index, customer);
@@ -696,41 +717,70 @@ bool createCustomer(int index, Customer& customer, SPass& sPass){
     numCustomerLimit(true, sPass);
     return true;
 }
-
 bool createCustomer(Customer& customer, SPass& sPass) {
     return createCustomer(-1, customer, sPass);
 }
 
 
-bool createTransaction(int index, int customerIndex, SPass& sPass) {
+bool createTransaction(int index, Transaction& transaction, SPass& sPass) {
     if (index == -1) {
         sPass.settings.addNumCustomers();
         index = sPass.settings.getNumCustomers();
-    } else if (index < -1) {
+    } else if (index == -2) {
+    } else if (index < -2) {
         return false;
-    } else if (checkTransaction(index, sPass)) {
+    }
+    if (checkCustomer(index, sPass)) {
         return false;
     }
 
-    if (customerIndex == -1) {
-        sPass.settings.addNumCustomers();
-        customerIndex = sPass.settings.getNumCustomers();
-    } else if (customerIndex < -1) {
-        return false;
-    } else if (!checkCustomer(customerIndex, sPass)) {
-        return false;
+    if (transaction.getId() == -2) {
+        transaction.setId(index);
     }
 
-    sPass.transactions.emplace(index, Transaction(&sPass.paymentPortal, &sPass.customers.at(customerIndex), index));
+    int customerIndex  = transaction.getCustomerId();
+
+    if (customerIndex != -2) {
+        if (checkCustomer(customerIndex, sPass)) {
+            if (!sPass.customers.count(customerIndex)) {
+                retrieveCustomer(customerIndex, sPass);
+            }
+
+            if (sPass.customers.at(customerIndex).getPendingTransaction() == nullptr) {
+                sPass.customers.at(customerIndex).setpendingTransaction(&transaction);
+            } else {
+                cerr << "Transaction already exists\n";
+                return false;
+            }
+        }
+    }
+    sPass.transactions.emplace(index,transaction);
+    archiveTransaction(index, sPass);
+        return true;
+
+}
+
+bool createTransaction(Transaction &transaction, SPass &sPass) {
+    return createTransaction(-1, transaction, sPass);
+}
+
+bool cancelTransaction(int index, SPass& sPass) {
+    if (!sPass.transactions.count(index)) return false;
+    sPass.transactions.at(index).cancelTransaction();
+    int customerIndex = sPass.transactions.at(index).getCustomerId();
+
+    if (checkCustomer(customerIndex, sPass)) {
+        if (!sPass.customers.count(customerIndex)) {
+            retrieveCustomer(customerIndex, sPass);
+        }
+        sPass.customers.at(customerIndex).setpendingTransaction(nullptr);
+        archiveCustomer(customerIndex, sPass);
+    }
+    sPass.transactions.erase(index);
     return true;
 }
 
-bool createTransaction(SPass& sPass) {
-    sPass.settings.addNumCustomers();
-    sPass.transactions.emplace(sPass.settings.getNumCustomers(), Transaction(&sPass.paymentPortal, nullptr, sPass.settings.getNumCustomers()));
-    return true;
-}
-// Allows for multiple input types using one function.
+    // Allows for multiple input types using one function.
 template <typename dataType>
 dataType userInput(string messege){
     string inputString;
@@ -767,7 +817,7 @@ dataType userInput(string messege){
 
     }
 
-// End of userInput
+    // End of userInput
 }
 
 bool retrieveItems(SPass& sPass) {
@@ -785,15 +835,18 @@ bool retrieveItems(SPass& sPass) {
         std::cerr << "JSON is not an array";
         return false;
     }
-    vector<int> transactionsAdd;
+    unordered_map<int, Item> transactionsAdd;
 
     for (const auto& t : data) {
-        int id = t.value("id", -1);
+        int id = t.value("id", -2);
         string name = t.value("name", "NULL");
         int price = t.value("price", 0);
         int quantity = t.value("quantity", 0);
-        }
+        transactionsAdd.emplace(id, Item(id, name, price, quantity));
+    }
+    sPass.items = transactionsAdd;
     return true;
+
 }
 
 bool archiveItem(int index, SPass& sPass){
@@ -802,7 +855,7 @@ bool archiveItem(int index, SPass& sPass){
     using nlohmann::json; //*
 
     json data;
-    std::ifstream in("data/customers.json"); //*
+    std::ifstream in("data/items.json"); //*
     if (in) { //*
         if (in.peek() == std::ifstream::traits_type::eof()) { //*
             data = json::array(); // empty file //*
@@ -819,6 +872,8 @@ bool archiveItem(int index, SPass& sPass){
 
     // Get transaction from map
     Item &item = sPass.items.at(index); //*
+
+    item.setId(index);
 
     // Convert to JSON
     json c = item; //*
@@ -843,10 +898,11 @@ bool archiveItem(int index, SPass& sPass){
 
     out << data.dump(4); //*
 
-    sPass.settings.addNumCustomers();
+    sPass.settings.addNumItems();
 
     return true;
 }
+
 
 bool addItem(int index, Item& item, SPass& sPass) {
     if (index == -1) {
@@ -854,15 +910,20 @@ bool addItem(int index, Item& item, SPass& sPass) {
         index = sPass.settings.getNumItems();
     } else if (index < -1) {
         return false;
-    } else if (findItem(index, sPass)){
+    }
+    if (findItem(index, sPass)){
         return false;
     }
+    if (item.getId() == -2) {
+        item.setId(index);
 
+    }
     sPass.items.emplace(index, item);
     archiveItem(index, sPass);
-    return true;
-}
 
+    return true;
+
+}
 bool addItem(Item& item, SPass& sPass) {
     return addItem(-1, item, sPass);
 }

@@ -16,14 +16,15 @@
 class Transaction {
 private:
     vector<ItemIn> items;
-    int totalCost;
+    int totalCost = 0;
     bool completed;
-    int id = -2'
-    int customerId;
+    int id = -2;
+    int customerId = -2;
     PaymentPortal* portal;
 
 
 public:
+  Transaction(PaymentPortal* portal, int id, int customerId);
   Transaction(PaymentPortal* portal, int customerId);
   Transaction(PaymentPortal* portal);
 
@@ -34,9 +35,9 @@ public:
   ~Transaction();
 
   //Getters and setters
-  vector<ItemIn> getTransaction() const;
   int getTotalCost() const;
 
+  vector<ItemIn> getItems() const;
   bool addItem(Item& item, int quantity);
   bool addItem(Item& item);
   bool removeItem(Item& item, int quantity);
@@ -46,6 +47,7 @@ public:
   int getCustomerId() const;
   bool isCompleted() const;
   void completeTransaction();
+  void cancelTransaction();
 
   int getId() const;
 
@@ -55,6 +57,7 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const Transaction& obj);
 
   bool setId(int id);
+
 
 };
 void to_json(nlohmann::json& j, const Transaction& t);

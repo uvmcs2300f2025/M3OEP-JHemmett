@@ -18,7 +18,7 @@ using std::string;
 
 class Item {
 private:
-  int id;
+  int id = -2;
   string name;
   int price;
   int quantity;
@@ -27,10 +27,10 @@ private:
 
 
 public:
-  Item(int id);
   Item(int id, string name);
   Item(int id, string name, int price);
   Item(int id, string name, int price, int quantity);
+  Item(string name, int price, int quantity);
 
   // Getters and setters.
   string getName() const;

@@ -25,6 +25,8 @@ private:
 
 public:
     Customer(std::string firstName, std::string lastName, std::string phoneNumber);  // constructor declaration
+    Customer(std::string firstName, std::string lastName, std::string phoneNumber, int customerId);  // constructor declaration
+
     Customer(const Customer& customer);
 
     std::string getFirstName() const;
@@ -46,14 +48,13 @@ public:
     Transaction* getPendingTransaction() const;
     void setpendingTransaction(Transaction* pendingTransaction);
 
-    void setCustomerId(int customerId);
+    bool setCustomerId(int customerId);
     int getCustomerId() const;
 
     void setTransactions(std::vector<int>& transactions);
     void addTransaction(int transaction);
     std::vector<int> getTransactions() const;
 
-    bool setId(int id);
     friend std::ostream& operator<<(std::ostream& os, const Customer& obj);
 
 };

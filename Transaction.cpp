@@ -11,8 +11,9 @@ using namespace std;
 /*
   Stores transaction information.
  */
-Transaction::Transaction(PaymentPortal* portal, int customerId) : completed(false), totalCost(0), portal(portal), customerId(customerId), id(id) {}
-Transaction::Transaction(PaymentPortal* portal) : completed(false), totalCost(0), portal(portal), customerId(-2), id(id) {}
+Transaction::Transaction(PaymentPortal* portal, int id, int customerId) : completed(false), portal(portal), customerId(customerId), id(id) {}
+Transaction::Transaction(PaymentPortal* portal, int customerId) : completed(false), portal(portal), customerId(customerId){}
+Transaction::Transaction(PaymentPortal* portal) : completed(false), portal(portal) {}
 
 // Transaction::Transaction(PaymentPortal* portal, int customerId, int id, vector<ItemIn>& items, int totalCost) : completed(true), totalCost(totalCost), portal(portal), customerId(customerId), id(id) {}
 // Transaction::Transaction(PaymentPortal* portal, int id, vector<ItemIn>& items, int totalCost) : completed(true), totalCost(totalCost), portal(portal), customerId(-2), id(id) {}
@@ -28,7 +29,7 @@ Transaction::~Transaction() {
 
 int Transaction::getTotalCost() const {return totalCost;}
 
-vector<ItemIn> Transaction::getTransaction() const {return items;}
+vector<ItemIn> Transaction::getItems() const {return items;}
 
 // Items are reserved when they are added to cart.
 bool Transaction::addItem(Item& item, int quantity)
@@ -121,6 +122,15 @@ void Transaction::completeTransaction(){
   completed = true;
 }
 
+void Transaction::cancelTransaction() {
+  if (!completed) {
+    for (ItemIn& item : items) {
+      item.item->changeHoldQuantity(item.purchaseQuantity);
+      removeItem(*item.item, item.purchaseQuantity);
+    }
+    completed = true;
+  }
+}
 int Transaction::getId() const {return id;}
 
 
@@ -156,7 +166,7 @@ void to_json(nlohmann::json& j, const Transaction& t){
 {"customerId", t.getCustomerId()},
   };
 
-  for (const ItemIn item : t.getTransaction())
+  for (const ItemIn item : t.getItems())
   {
 
     nlohmann::json itemA = nlohmann::json::array({
@@ -172,7 +182,7 @@ void to_json(nlohmann::json& j, const Transaction& t){
 }
 
 bool Transaction::setId(int id) {
-  if (id == -2) return false;
+  if (this->id == -2) return false;
   this->id = id;
   return true;
 }

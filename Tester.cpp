@@ -120,11 +120,7 @@ bool itemTest(){
   }
 
   // Setters
-  item.setId(1);
-  if (item.getId() != 1){
-    passed = false;
-    cout<<"Item getId(), after setId(), is not 1, but: "<<item.getId()<<endl;
-  }
+
 
   item.setName("name2");
   if (item.getName() != "name2"){
@@ -251,10 +247,10 @@ bool transactionTest(){
   bool passed = true;
   Settings settings("data/settings.json");
   PaymentPortal paymentPortal;
-  Customer customer(1, "Jonas", "H", "8023632222");
+  Customer customer("Jonas", "H", "8023632222");
   Item item(0, "name", 10, 10);
   ItemIn itemIn(&item);
-  Transaction transaction(&paymentPortal, 1, 2);
+  Transaction transaction(&paymentPortal, 2,1);
 
   if(transaction.getId() != 2){
     passed = false;
@@ -310,35 +306,101 @@ bool mainTest(){
   Settings settings("data/settingsTest.json");
   settings.wipe();
   PaymentPortal paymentPortal;
+  SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal, items);
+
+  Item item("Carrot", 100, 12);
 
   if(items.size() != 0){
     passed = false;
-    cout << "items.size() is not 0, but: " << items.size() << endl;
+    cout << "1: items.size() is " << items.size() << " not 0" << endl;
   }
 
-  SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal, items);
-  Item item(0, "item0", 10, 12);
-  addItem(item, sPass);
+  if(item.getId() != -2){
+    passed = false;
+    cout << "2: item.getId() is " << item.getId() << " not -2" << endl;
+  }
 
+
+  addItem(item,sPass);
   if(items.size() != 1){
     passed = false;
-    cout << "items.size() is not 1, but: " << items.size() << endl;
+    cout << "3: items.size() is " << items.size() << " not 1" << endl;
   }
 
-  //Erasing from memory manually to check archive and retrieve
-  cout << "itemSize:" << items.size();
+  if(!items.count(2)){
+    passed = false;
+    cout << "4: items.count(2) is " << items.count(2) << " not 2" << endl;
+  }
+
+  // Manually erase to test archive and retrieve
+  items.erase(2);
 
   if(items.size() != 0){
     passed = false;
-    cout << "items.size() is not 0, but: " << items.size() << endl;
+    cout << "5: items.size() is " << items.size() << " not 0" << endl;
   }
 
-  cout << items.at(0).getId() << endl;
+
   retrieveItems(sPass);
   if(items.size() != 1){
     passed = false;
-    cout << "items.size(), after retrieveItems(1), is not 1, but: " << items.size() << endl;
+    cout << "6: items.size() is " << items.size() << " not 1" << endl;
   }
+
+  if(!items.count(2)){
+    passed = false;
+    cout << "7: items.count(2) is " << items.count(2) << " not 1" << endl;
+  }
+
+  if(items.at(2).getName() != "Carrot"){
+    passed = false;
+    cout << "8: items.count(2) is '" << items.count(2) << "' not 'Carrot'" << endl;
+  }
+
+  Customer cust("Jonas", "H", "8023632222");
+
+  if(customers.size() != 0){
+    passed = false;
+    cout << "9: customers.size() is " << customers.size() << " not 0" << endl;
+  }
+
+  createCustomer(cust, sPass);
+  if(customers.size() != 1){
+    passed = false;
+    cout << "10: customers.size() is " << customers.size() << " not 1" << endl;
+  }
+
+  if(!customers.count(2)){
+    passed = false;
+    cout << "11: customers.count(2) is " << customers.count(2) << " not 1" << endl;
+  }
+
+  if(customers.at(2).getFirstName() != "Jonas"){
+    passed = false;
+    cout << "12: customers.count(2) is " << customers.at(2).getFirstName() << " not 'Jonas'" << endl;
+  }
+
+  // Manually erase to test archive and retrieve
+  customers.erase(2);
+
+  if(customers.size() != 0){
+    passed = false;
+    cout << "12: customers.size() is " << customers.size() << " not 0" << endl;
+  }
+
+  Transaction tr(&paymentPortal);
+
+  if(tr.getId() != -2){
+    passed = false;
+    cout << "2: tr.getId() is " << tr.getId() << " not -2" << endl;
+  }
+
+  if(tr.getCustomerId() != -2){
+    passed = false;
+    cout << "2: tr.getCustomerId() is " << tr.getCustomerId() << " not -2" << endl;
+  }
+
+  createTransaction(tr,sPass);
   return passed;
 
 
