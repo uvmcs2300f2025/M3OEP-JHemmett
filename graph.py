@@ -9,7 +9,7 @@ def getCustomer(id):
 
     customer = None
     for c in customers:
-        if str(c["id"]) == str(id):
+        if str(c["customerId"]) == str(id):
             customer = c
             break
     
@@ -70,7 +70,7 @@ def viewCustomerPurchases(size):
     customers.sort(key = getNumTransactions, reverse = True)
 
     names = [c["firstName"] for c in customers[:size]]
-    ids = [c["id"] for c in customers[:size]]
+    ids = [c["customerId"] for c in customers[:size]]
     sales = [len(c["transactions"]) for c in customers[:size]]
 
     plt.title("Top Customers")
@@ -157,7 +157,7 @@ def viewCustomer(id):
     
     plt.subplots_adjust(top=0.75) 
 
-    plt.figtext(0.1, 0.8, f"Name: {customer['firstName']} {customer['lastName']}\nID: {customer['id']}\nStore Credit: {customer['credit']}", ha = "left", va = "bottom", fontsize = 15)
+    plt.figtext(0.1, 0.8, f"Name: {customer['firstName']} {customer['lastName']}\nID: {customer['customerId']}\nStore Credit: {customer['credit']}", ha = "left", va = "bottom", fontsize = 15)
     
 
     plt.show()
@@ -183,9 +183,8 @@ def customerMenu():
             break
 
     viewCustomer(choice)
-    
+
 if __name__ == "__main__":
-    viewItem(1)
     choice = None
     while True:
         try:
