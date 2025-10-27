@@ -440,7 +440,7 @@ bool checkCustomer(int index, SPass& sPass){
 
     for (const auto& t : data)
     {
-        if (t.contains("id") && t["id"] == index) return true;
+        if (t.contains("customerId") && t["customerId"] == index) return true;
     }
 
     return false;
@@ -448,7 +448,6 @@ bool checkCustomer(int index, SPass& sPass){
 }
 // Very similar to retrieveTransaction, but with customers instead.
 bool retrieveCustomer(int index, SPass& sPass){
-
     if (!checkCustomer(index, sPass)) return false;
 
     ifstream f("data/customers.json");
@@ -456,8 +455,8 @@ bool retrieveCustomer(int index, SPass& sPass){
         std::cerr << "Could not open file";
         return false;
     }
-
     nlohmann::json data;
+
     if (f.peek() == std::ifstream::traits_type::eof()) {
         data = nlohmann::json::array();
     } else {
@@ -600,7 +599,7 @@ bool removeCustomer(int index, SPass& sPass)
 void numCustomerLimit(bool futureCheck, SPass& sPass){
     if (sPass.customers.size() != sPass.customersAge.size())
     {
-        cerr << "transactionArchivesAge.size() != transactionArchivesAge.size()";
+        cerr << "customers.size() != customersAge.size()";
     }
 
     // Removes the oldest one if too many are in memory.
@@ -724,13 +723,14 @@ bool createCustomer(Customer& customer, SPass& sPass) {
 
 bool createTransaction(int index, Transaction& transaction, SPass& sPass) {
     if (index == -1) {
-        sPass.settings.addNumCustomers();
-        index = sPass.settings.getNumCustomers();
+        sPass.settings.addNumTransactions();
+        index = sPass.settings.getNumTransactions();
     } else if (index == -2) {
     } else if (index < -2) {
         return false;
     }
-    if (checkCustomer(index, sPass)) {
+
+    if (checkTransaction(index, sPass)) {
         return false;
     }
 
@@ -740,6 +740,9 @@ bool createTransaction(int index, Transaction& transaction, SPass& sPass) {
 
     int customerIndex  = transaction.getCustomerId();
 
+    sPass.transactions.emplace(index,transaction);
+
+    // Attach to customer if possible
     if (customerIndex != -2) {
         if (checkCustomer(customerIndex, sPass)) {
             if (!sPass.customers.count(customerIndex)) {
@@ -749,13 +752,12 @@ bool createTransaction(int index, Transaction& transaction, SPass& sPass) {
             if (sPass.customers.at(customerIndex).getPendingTransaction() == nullptr) {
                 sPass.customers.at(customerIndex).setpendingTransaction(&transaction);
             } else {
-                cerr << "Transaction already exists\n";
+                cerr << "Customer already has transaction";
                 return false;
             }
         }
     }
-    sPass.transactions.emplace(index,transaction);
-    archiveTransaction(index, sPass);
+
         return true;
 
 }
@@ -930,7 +932,6 @@ bool addItem(Item& item, SPass& sPass) {
 
 bool removeItem(int index, SPass& sPass) {
     if (!findItem(index, sPass)) return false;
-    sPass.items.erase(index);
     using nlohmann::json; //*
 
     json data;
@@ -975,6 +976,7 @@ bool removeItem(int index, SPass& sPass) {
     }
 
     out << data.dump(4); //*
+    sPass.items.erase(index);
 
     return true;
 }

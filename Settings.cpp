@@ -45,7 +45,6 @@ void Settings::setNumTransactions(int numTransactions) {
 
 void Settings::addNumTransactions() {
   numTransactions++;
-  cout << numTransactions << endl;
   updateFile();
 }
 

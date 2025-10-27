@@ -182,7 +182,7 @@ void to_json(nlohmann::json& j, const Transaction& t){
 }
 
 bool Transaction::setId(int id) {
-  if (this->id == -2) return false;
+  if (this->id != -2) return false;
   this->id = id;
   return true;
 }

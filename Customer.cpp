@@ -62,8 +62,9 @@ int Customer::getCustomerId() const
 }
 
 bool Customer::setCustomerId(int customerId) {
-    if (this->customerId == -2) return false;
+    if (this->customerId != -2) return false;
     this->customerId = customerId;
+
     return true;
 }
 

@@ -303,8 +303,16 @@ bool mainTest(){
   queue<int> customersAge;
 
   unordered_map<int, Item> items;
+
   Settings settings("data/settingsTest.json");
+
+  // Wipe data
   settings.wipe();
+  ofstream("data/transactions.json", ios::trunc).close();
+  ofstream("data/items.json", ios::trunc).close();
+  ofstream("data/customers.json", ios::trunc).close();
+
+
   PaymentPortal paymentPortal;
   SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal, items);
 
@@ -339,7 +347,6 @@ bool mainTest(){
     passed = false;
     cout << "5: items.size() is " << items.size() << " not 0" << endl;
   }
-
 
   retrieveItems(sPass);
   if(items.size() != 1){
@@ -382,25 +389,91 @@ bool mainTest(){
 
   // Manually erase to test archive and retrieve
   customers.erase(2);
+  customersAge.pop();
 
   if(customers.size() != 0){
     passed = false;
     cout << "12: customers.size() is " << customers.size() << " not 0" << endl;
   }
 
+  if(customers.size() != 0){
+    passed = false;
+    cout << "13: customers.size() is " << customers.size() << " not 0" << endl;
+  }
+
+  retrieveCustomer(2, sPass);
+
+  if(customers.size() != 1){
+    passed = false;
+    cout << "14: customers.size() is " << customers.size() << " not 1" << endl;
+  }
+
+  if(!customers.count(2)){
+    passed = false;
+    cout << "15: customers.count(2) is " << customers.count(2) << " not 1" << endl;
+  }
+
+  if(customers.at(2).getFirstName() != "Jonas"){
+    passed = false;
+    cout << "16: customers.count(2) is '" << customers.count(2) << "' not 'Jonas'" << endl;
+  }
+
   Transaction tr(&paymentPortal);
+
+  if(transactions.size() != 0){
+    passed = false;
+    cout << "17: transactions.size() is " << transactions.size() << " not 0" << endl;
+  }
 
   if(tr.getId() != -2){
     passed = false;
-    cout << "2: tr.getId() is " << tr.getId() << " not -2" << endl;
+    cout << "18: transactions.getId() is " << tr.getId() << " not -2" << endl;
+
   }
 
   if(tr.getCustomerId() != -2){
     passed = false;
-    cout << "2: tr.getCustomerId() is " << tr.getCustomerId() << " not -2" << endl;
+    cout << "19: transactions.getCustomerId() is " << tr.getId() << " not -2" << endl;
   }
 
   createTransaction(tr,sPass);
+
+  if(transactions.size() != 1){
+    passed = false;
+    cout << "20: transactions.size() is " << transactions.size() << " not 1" << endl;
+
+  }
+
+  if(tr.getId() != 2){
+    passed = false;
+    cout << "21: transactions.getId() is " << tr.getId() << " not 2" << endl;
+
+  }
+  if(tr.getCustomerId() != -2){
+    passed = false;
+    cout << "22: transactions.getCustomerId() is " << tr.getId() << " not -2" << endl;
+  }
+
+  if(item.getAvailableQuantity() != 12){
+    passed = false;
+    cout << "23: item.getAvailableQuantity() is " << item.getAvailableQuantity() << " not 12" << endl;
+  }
+
+  tr.addItem(item);
+
+  if(item.getAvailableQuantity() != 11){
+    passed = false;
+    cout << "23: item.getAvailableQuantity() is " << item.getAvailableQuantity() << " not 11" << endl;
+  }
+
+  cancelTransaction(2, sPass);
+
+  if(transactions.size() != 0){
+    passed = false;
+    cout << "23: transactions.size() is " << transactions.size() << " not 0" << endl;
+
+  }
+
   return passed;
 
 

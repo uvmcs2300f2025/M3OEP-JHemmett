@@ -1,6 +1,6 @@
 {
      "maxCustomers": 2,
      "maxTransactions": 2,
-     "numCustomers": 4,
-     "numTransactions": 1
+     "numCustomers": 3,
+     "numTransactions": 2
 }
