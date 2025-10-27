@@ -2,7 +2,7 @@
 #include "Item.h"
 #include <string>
 #include <iostream>
-
+#include <iomanip>
 using namespace std;
 
 Item::Item(int id, string name) : id(id), name(name), price(0), quantity(0),holdQuantity(0) {}
@@ -57,7 +57,7 @@ bool Item::operator==(const Item& other) const {
 }
 
 std::ostream& operator<<(std::ostream& os, const Item& obj){
-  os << obj.name << "(" << obj.id << ") " << obj.quantity << "x " << obj.holdQuantity << "xHold $" << obj.price;
+  os << obj.name << "(" << obj.id << ") " << obj.quantity << "x " << "$" << static_cast<double>(obj.price) / 100.0;
   return os;
 }
 

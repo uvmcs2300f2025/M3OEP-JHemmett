@@ -179,42 +179,45 @@ bool archiveItem(int index, SPass& sPass);
 
 bool addItem(int index, Item& item, SPass& sPass);
 bool addItem(Item& item, SPass& sPass);
-void runProgram(){
-    unordered_map<int, Transaction> transactions;
-    unordered_map<int, Transaction> transactionArchives;
-    queue<int> transactionArchivesAge;
-
-    unordered_map<int, Customer> customers;
-    queue<int> customersAge;
-    Settings settings("data/settings.json");
-    PaymentPortal paymentPortal;
-    unordered_map<int, Item> items;
-    SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal,items);
-
-    int cId = userInput<int>("Please enter your customer ID\n(type your customer ID or 0 for no account)");
-
-    // Todo, make sure 0 customer exists, other input validation as well.
-    Customer& customerUse = (cId > 0 && retrieveCustomer(cId, sPass)) ? customers.at(cId) : customers.at(0);
-
-    if(cId == 0) {
-        cout << "No Customer" << endl;
-    } else if(checkCustomer(cId, sPass)) {
-        retrieveCustomer(cId, sPass);
-        cout << "Welcome back " << customerUse.getFirstName() << endl;
-    } else {
-        cout << "New Customer" << endl;
-    }
-
-}
+void transactionInput(Transaction& transaction, SPass& sPass);
 
 
-// bool createTransaction(int index, SPass& sPass){
-//   if (checkTransaction(index, sPass)) return false;
+// void runProgram(){
+//     unordered_map<int, Transaction> transactions;
+//     unordered_map<int, Transaction> transactionArchives;
+//     queue<int> transactionArchivesAge;
 //
-//   transactions.emplace(index, Transaction());
-//   transactionArchivesAge.push(index);
-//   return true;
+//     unordered_map<int, Customer> customers;
+//     queue<int> customersAge;
+//     Settings settings("data/settings.json");
+//     PaymentPortal paymentPortal;
+//     unordered_map<int, Item> items;
+//     SPass sPass(transactions, transactionArchives, transactionArchivesAge, customers, customersAge, settings, paymentPortal,items);
+//
+//     int cId = userInput<int>("Please enter your customer ID\n(type your customer ID or 0 for no account)");
+//
+//     // Todo, make sure 0 customer exists, other input validation as well.
+//     Customer& customerUse = (cId > 0 && retrieveCustomer(cId, sPass)) ? customers.at(cId) : customers.at(0);
+//
+//     if(cId == 0) {
+//         cout << "No Customer" << endl;
+//     } else if(checkCustomer(cId, sPass)) {
+//         retrieveCustomer(cId, sPass);
+//         cout << "Welcome back " << customerUse.getFirstName() << endl;
+//     } else {
+//         cout << "New Customer" << endl;
+//     }
+//
 // }
+//
+//
+// // bool createTransaction(int index, SPass& sPass){
+// //   if (checkTransaction(index, sPass)) return false;
+// //
+// //   transactions.emplace(index, Transaction());
+// //   transactionArchivesAge.push(index);
+// //   return true;
+// // }
 
 bool checkTransaction(int index, SPass& sPass){
     if (index < 0 ) return false;
@@ -616,84 +619,82 @@ Item* findItem(int id, SPass& sPass){
 }
 
 
+Customer createCustomerInput(){
+    string firstName, lastName, phoneNumber;
 
-// Customer createCustomerInput(){
-//     string firstName, lastName, phoneNumber;
-//
-//     while (true)
-//     {
-//         firstName = userInput<string>("Please enter your first name\n(E.G. Jonas):");
-//
-//         if (!firstName.empty()) break;
-//
-//         cout << "Invalid input!getter" << endl;
-//     }
-//
-//     for (int i = 0; i < firstName.length(); i++)
-//     {
-//         firstName[i] = (!i) ? toupper(firstName[i]) : tolower(firstName[i]);
-//     }
-//
-//     while (true)
-//     {
-//         lastName = userInput<string>("Please enter your last name\n(E.G. Hemmett):");
-//
-//         lastName.erase(std::remove(lastName.begin(), lastName.end(), ' '), lastName.end());
-//
-//         if (!lastName.empty()) break;
-//
-//         cout << "Invalid input!getter" << endl;
-//     }
-//
-//     // I added this to account for last names like McNee where 2 characters are capitalized.
-//     if (lastName.length() >= 2 && tolower(lastName[0]) == 'm' && tolower(lastName[1]) == 'c')
-//     {
-//         for (int i = 0; i < lastName.length(); i++)
-//         {
-//             lastName[i] = (!i || i == 2 ) ? toupper(lastName[i]) : tolower(lastName[i]);
-//         }
-//
-//     } else if (lastName.length() >= 3 && tolower(lastName[0]) == 'v' && tolower(lastName[1]) == 'o'  && tolower(lastName[1]) == 'n'){
-//         for (int i = 0; i < lastName.length(); i++)
-//         {
-//             lastName[i] = (!i || i == 3) ? toupper(lastName[i]) : tolower(lastName[i]);
-//         }
-//     }
-//
-//
-//     else {
-//         for (int i = 0; i < lastName.length(); i++)
-//         {
-//             lastName[i] = (!i) ? toupper(lastName[i]) : tolower(lastName[i]);
-//         }
-//
-//     }
-//
-//
-//     while (true)
-//     {
-//         int allChar = true;
-//         phoneNumber = userInput<string>("Please enter your phone number\n(Enter as 10 or 11 digits):");
-//
-//         for (char c : phoneNumber)
-//         {
-//             if (!isdigit(c)) allChar = false;
-//         }
-//
-//         if (allChar)
-//         {
-//             if (phoneNumber.length() == 10) phoneNumber.insert(phoneNumber.begin(), '1');
-//             if (phoneNumber.length() == 11)  break;
-//         }
-//
-//         cout << "Phone: " << phoneNumber << endl;
-//         cout << "Invalid input!getter" << endl;
-//     }
-//
-//     //TODO: Require ID
-//     return Customer(0, firstName, lastName, phoneNumber);
-// // End of createCustomer
-// }
+    while (true)
+    {
+        firstName = userInput<string>("Please enter your first name\n(E.G. Jonas):");
+
+        if (!firstName.empty()) break;
+
+        cout << "Invalid input!getter" << endl;
+    }
+
+    for (int i = 0; i < firstName.length(); i++)
+    {
+        firstName[i] = (!i) ? toupper(firstName[i]) : tolower(firstName[i]);
+    }
+
+    while (true)
+    {
+        lastName = userInput<string>("Please enter your last name\n(E.G. Hemmett):");
+
+        lastName.erase(std::remove(lastName.begin(), lastName.end(), ' '), lastName.end());
+
+        if (!lastName.empty()) break;
+
+        cout << "Invalid input!getter" << endl;
+    }
+
+    // I added this to account for last names like McNee where 2 characters are capitalized.
+    if (lastName.length() >= 2 && tolower(lastName[0]) == 'm' && tolower(lastName[1]) == 'c')
+    {
+        for (int i = 0; i < lastName.length(); i++)
+        {
+            lastName[i] = (!i || i == 2 ) ? toupper(lastName[i]) : tolower(lastName[i]);
+        }
+
+    } else if (lastName.length() >= 3 && tolower(lastName[0]) == 'v' && tolower(lastName[1]) == 'o'  && tolower(lastName[1]) == 'n'){
+        for (int i = 0; i < lastName.length(); i++)
+        {
+            lastName[i] = (!i || i == 3) ? toupper(lastName[i]) : tolower(lastName[i]);
+        }
+    }
+
+
+    else {
+        for (int i = 0; i < lastName.length(); i++)
+        {
+            lastName[i] = (!i) ? toupper(lastName[i]) : tolower(lastName[i]);
+        }
+
+    }
+
+
+    while (true)
+    {
+        int allChar = true;
+        phoneNumber = userInput<string>("Please enter your phone number\n(Enter as 10 or 11 digits):");
+
+        for (char c : phoneNumber)
+        {
+            if (!isdigit(c)) allChar = false;
+        }
+
+        if (allChar)
+        {
+            if (phoneNumber.length() == 10) phoneNumber.insert(phoneNumber.begin(), '1');
+            if (phoneNumber.length() == 11)  break;
+        }
+
+        cout << "Phone: " << phoneNumber << endl;
+        cout << "Invalid input!getter" << endl;
+    }
+
+    return Customer(firstName, lastName, phoneNumber);
+// End of createCustomer
+}
 
 bool createCustomer(int index, Customer& customer, SPass& sPass) {
     if (index == -1) {
@@ -979,5 +980,81 @@ bool removeItem(int index, SPass& sPass) {
     sPass.items.erase(index);
 
     return true;
+}
+
+void transactionInput(Transaction& transaction, SPass& sPass){
+    bool running = true;
+    while (running){
+        int menuOption= userInput<int>("What would you like to do?\n(1: Add items, 2: Remove items, 3: Checkout, 4: Cancel transaction)");
+
+        if (menuOption == 1) {
+            while (true) {
+                cout << "Products are formatted like Name(ID) Quantityx $price" << endl;
+
+                for (const auto& pair : sPass.items) {
+                    cout << pair.second << endl;
+                }
+
+                int addOption = userInput<int>("What would you like to add\n(Item ID: Add item, 0: Exit)");
+
+                if (addOption == 0) {
+                    break;
+                }
+
+                if (addOption >= 1) {
+                    if (findItem(addOption, sPass) != nullptr) {
+                        if (transaction.addItem(sPass.items.at(addOption))) {
+                            cout << "Added" << endl;
+                        } else {
+                            cout << "Could not add" << endl;
+                        }
+                    } else {
+                        cout << "Could not add" << endl;
+                    }
+
+                }
+            }
+        } else if (menuOption == 2) {
+            while (true) {
+                cout << "Products are formatted like Name(ID) Quantityx $price, holdQuantity" << endl;
+
+                for (const auto& item : transaction.getItems()) {
+                    cout << *item.item << endl;
+                    cout << item.purchaseQuantity << endl;
+                }
+
+                int addOption = userInput<int>("What would you like to remove\n(Item ID: Remove item, 0: Exit)");
+
+                if (addOption == 0) {
+                    break;
+                }
+
+                if (addOption >= 1) {
+                    if (findItem(addOption, sPass) != nullptr) {
+                        if (transaction.removeItem(sPass.items.at(addOption))) {
+                            cout << "Removed" << endl;
+                        } else {
+                            cout << "Could not Remove" << endl;
+                        }
+                    } else {
+                        cout << "Could not Remove" << endl;
+                    }
+
+                }
+            }
+
+
+        } else if (menuOption == 3) {
+            transaction.completeTransaction();
+            running = false;
+            cout << "transaction complete" << endl;
+        } else if (menuOption == 4) {
+            transaction.completeTransaction();
+            running = false;
+            cout << "transaction canceled" << endl;
+        }
+
+    }
+
 }
 

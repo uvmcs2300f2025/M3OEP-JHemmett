@@ -75,6 +75,8 @@ def viewCustomerPurchases(size):
 
     plt.title("Top Customers")
     plt.xlabel('Customer')
+    plt.ylabel('# of Purchases')
+
 
     plt.bar(names[:size], sales[:size])
 
@@ -134,8 +136,18 @@ def viewCustomer(id):
 
     transactions = customer["transactions"]
     plt.xlabel(f"Purchases")
+    plt.ylabel(f"$ Spent")
 
-    plt.bar(customer["transactions"], [getTransaction(t)["totalCost"] for t in customer["transactions"]])
+    ids = []
+    costs = []
+
+    for t in customer["transactions"]:
+        tr = getTransaction(t)
+        if tr is not None:
+            ids.append(t)
+            costs.append(tr["totalCost"])
+
+    plt.bar(ids, costs)
 
     tr = range(len(customer["transactions"]))
 
@@ -147,58 +159,37 @@ def viewCustomer(id):
 
     plt.figtext(0.1, 0.8, f"Name: {customer['firstName']} {customer['lastName']}\nID: {customer['id']}\nStore Credit: {customer['credit']}", ha = "left", va = "bottom", fontsize = 15)
     
-    # plt.xticks(tr, [(getItem(iId)["name"] if getItem(iId) else "(Out of Stock)") + "\n" + iId for iId in customer["transactions"]])
 
     plt.show()
 
 def customerMenu():
     #TODO: If customers are removed, the limit should not be based
      # Finds the number of customers, used 
-    try:
+
+    choice = None
+    while True:
+        choice = int(input(f"Who would you like to view?\n(Enter a customer ID (for testing sake, 1 works)): "))
+
         with open('data/customersTest.json', 'r') as file:
             customers = json.load(file)
-            maxCustomers = len(customers)
-    except:
-        print("Could not open customersTest.json")
-        maxCustomers = -1
-
-    choice = None
-    while True:
-        try:
-            if maxCustomers == -1:
-                choice = int(input("How many customers?\n(Enter a number): "))
-            elif maxCustomers == 0:
-                print("There are 0 customers")
-                return
-            elif maxCustomers == 1:
-                choice = 1
-                break
-            else:
-                choice = int(input(f"How many customers?\n(Enter a number between 1 and {maxCustomers}): "))
-
-        except:
-            None
         
-        if maxCustomers == -1:
-            if not(choice < 0):
-                break
-        else:
-            # Defaults to showing all customers
-            if not(choice):
-                choice = maxCustomers
-                break
-            if not(choice < 0 or choice > maxCustomers):
+        found = False
+        for c in customers:
+            if c["customerId"] == choice:
+                found = True
                 break
         
-        print("Invalid Choice")
+        if found:
+            break
+
     viewCustomer(choice)
-
+    
 if __name__ == "__main__":
-
+    viewItem(1)
     choice = None
     while True:
         try:
-            choice = int(input("What graphs would you like to view?\n(1: Customer Purchases, 2: Customer info): "))
+            choice = int(input("What graphs would you like to view?\n(1: Top Customers, 2: Customer info): "))
 
 
         except:
@@ -213,6 +204,6 @@ if __name__ == "__main__":
         case 1:
             customerPurchasesMenu()
         case 2:
-            viewCustomer(1)
+            customerMenu()
     
     

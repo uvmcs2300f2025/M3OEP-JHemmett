@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
-project(M10EP)
+project(M30EP)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(M10EP
+add_executable(M30EP
         paymentPortal.cpp
         Main.cpp
         Customer.cpp
